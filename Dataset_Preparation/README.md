@@ -286,7 +286,7 @@ Link to EVADepth.py - https://github.com/rohitrnath/DenseDepth/blob/master/EVADe
 ### ipython notebooks used
 
 * **Notebook used to generate Overlayed image(fg_bg) and Mask**
-  https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/tree/master/Dataset_Preparation//Assignment15A_Overlay.ipynb
+  https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/tree/master/Dataset_Preparation/Assignment15A_Overlay.ipynb
 * **Notebook used to generate Depth images**
   https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/tree/master/Dataset_Preparation/Assignment15A_Depth.ipynb
 * **Notebook used to calculate statistics for this dataset**
@@ -294,9 +294,6 @@ Link to EVADepth.py - https://github.com/rohitrnath/DenseDepth/blob/master/EVADe
 * **Notebook used to display sample images from dataset**
   https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/tree/master/Dataset_Preparation/Assignment15A_Display.ipynb
 
+## Team Members: 
 
-
-
-
-
-
+**Rohit R Nath, Varinder Sandhu, Rao Ganji**
