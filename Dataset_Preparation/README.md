@@ -134,7 +134,7 @@ https://drive.google.com/drive/folders/1fv71eSWdOED0plymX5kN9P_FuBcgdMCv?usp=sha
 
 ## Samples of Dataset
 
-![all types](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/tree/master/Dataset_Preparation/images_used/all_images.png)
+![all types](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Dataset_Preparation/images_used/all_images.png)
 
 ## Steps To Create Custom Dataset
 
