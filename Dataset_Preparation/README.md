@@ -6,7 +6,7 @@ Here we are creating custom dataset for monocular depth estimation and segmentat
 
 ### G-Drive Folder Structure
 
-```python
+```bash
 Assignment 15A
 |-- Input
 |   |-- bg (various size)
@@ -134,7 +134,7 @@ https://drive.google.com/drive/folders/1fv71eSWdOED0plymX5kN9P_FuBcgdMCv?usp=sha
 
 ## Samples of Dataset
 
-![all types](https://github.com/rohitrnath/EVA-4/blob/master/S15/A/images_used/all_images.png)
+![all types](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/tree/master/Dataset_Preparation/images_used/all_images.png)
 
 ## Steps To Create Custom Dataset
 
@@ -174,7 +174,7 @@ Followed this tutorial : https://www.youtube.com/watch?v=tKyRCS1qKTY
 4. Loaded the background removed image to GIMP( for croping and to create the mask)
 5. continued same steps 6,7,8 as mentioned above in method 1.
 
-#### ![Sample Image](https://github.com/rohitrnath/EVA-4/blob/master/S15/A/images_used/fg_imgs_1.png)
+#### ![Sample Image](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/tree/master/Dataset_Preparation/images_used/fg_imgs_1.png)
 
 ###Masks Created For Foregrounds
 
@@ -191,7 +191,7 @@ ___Observed some gradiant shift from black to white in the borders of the foregr
 
 So loaded the images to colab, made all non zero values to 255, and saved it as a grayscale image.
 
-![Sample Image](https://github.com/rohitrnath/EVA-4/blob/master/S15/A/images_used/fg_mask_imgs_1.png)
+![Sample Image](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/tree/master/Dataset_Preparation/images_used/fg_mask_imgs_1.png)
 
 ###Overlay Foreground Over Background
 
@@ -257,11 +257,11 @@ iterate through background image:
 
 **Mask for fg_bg***
 
-![mask](https://github.com/rohitrnath/EVA-4/blob/master/S15/A/images_used/overlay_mask_imgs_1.png)
+![mask](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/tree/master/Dataset_Preparation/images_used/overlay_mask_imgs_1.png)
 
 ***Overlay foreground over background***
 
-![Overlay](https://github.com/rohitrnath/EVA-4/blob/master/S15/A/images_used/overlay_imgs_1.png)
+![Overlay](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/tree/master/Dataset_Preparation/images_used/overlay_imgs_1.png)
 
 ### Create Depth Images
 
@@ -281,18 +281,18 @@ Changes:
 
 Link to EVADepth.py - https://github.com/rohitrnath/DenseDepth/blob/master/EVADepth.py
 
-####![mask](https://github.com/rohitrnath/EVA-4/blob/master/S15/A/images_used/depth_imgs_1.png)
+####![mask](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/tree/master/Dataset_Preparation/images_used/depth_imgs_1.png)
 
 ### ipython notebooks used
 
 * **Notebook used to generate Overlayed image(fg_bg) and Mask**
-  https://github.com/rohitrnath/EVA-4/blob/master/S15/A/Assignment15A_Overlay.ipynb
+  https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/tree/master/Dataset_Preparation//Assignment15A_Overlay.ipynb
 * **Notebook used to generate Depth images**
-  https://github.com/rohitrnath/EVA-4/blob/master/S15/A/Assignment15A_Depth.ipynb
+  https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/tree/master/Dataset_Preparation/Assignment15A_Depth.ipynb
 * **Notebook used to calculate statistics for this dataset**
-  https://github.com/rohitrnath/EVA-4/blob/master/S15/A/Assignment15A_Mean.ipynb
+  https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/tree/master/Dataset_Preparation/Assignment15A_Mean.ipynb
 * **Notebook used to display sample images from dataset**
-  https://github.com/rohitrnath/EVA-4/blob/master/S15/A/Assignment15A_Display.ipynb
+  https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/tree/master/Dataset_Preparation/Assignment15A_Display.ipynb
 
 
 
