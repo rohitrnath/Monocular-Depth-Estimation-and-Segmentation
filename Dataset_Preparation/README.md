@@ -174,7 +174,7 @@ Followed this tutorial : https://www.youtube.com/watch?v=tKyRCS1qKTY
 4. Loaded the background removed image to GIMP( for croping and to create the mask)
 5. continued same steps 6,7,8 as mentioned above in method 1.
 
-#### ![Sample Image](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/tree/master/Dataset_Preparation/images_used/fg_imgs_1.png)
+#### ![Sample Image](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Dataset_Preparation/images_used/fg_imgs_1.png)
 
 ###Masks Created For Foregrounds
 
@@ -191,7 +191,7 @@ ___Observed some gradiant shift from black to white in the borders of the foregr
 
 So loaded the images to colab, made all non zero values to 255, and saved it as a grayscale image.
 
-![Sample Image](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/tree/master/Dataset_Preparation/images_used/fg_mask_imgs_1.png)
+![Sample Image](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Dataset_Preparation/images_used/fg_mask_imgs_1.png)
 
 ###Overlay Foreground Over Background
 
@@ -257,11 +257,11 @@ iterate through background image:
 
 **Mask for fg_bg***
 
-![mask](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/tree/master/Dataset_Preparation/images_used/overlay_mask_imgs_1.png)
+![mask](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Dataset_Preparation/images_used/overlay_mask_imgs_1.png)
 
 ***Overlay foreground over background***
 
-![Overlay](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/tree/master/Dataset_Preparation/images_used/overlay_imgs_1.png)
+![Overlay](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Dataset_Preparation/images_used/overlay_imgs_1.png)
 
 ### Create Depth Images
 
@@ -281,7 +281,7 @@ Changes:
 
 Link to EVADepth.py - https://github.com/rohitrnath/DenseDepth/blob/master/EVADepth.py
 
-####![mask](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/tree/master/Dataset_Preparation/images_used/depth_imgs_1.png)
+####![mask](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Dataset_Preparation/images_used/depth_imgs_1.png)
 
 ### ipython notebooks used
 
