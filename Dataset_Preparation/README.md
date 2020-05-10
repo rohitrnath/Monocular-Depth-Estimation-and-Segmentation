@@ -138,9 +138,9 @@ https://drive.google.com/drive/folders/1fv71eSWdOED0plymX5kN9P_FuBcgdMCv?usp=sha
 
 ## Steps To Create Custom Dataset
 
-###Create Foreground Images with Transparent Background
+### Create Foreground Images with Transparent Background
 
-####Method 1 - Using GIMP Tool
+#### Method 1 - Using GIMP Tool
 
 Followed this tutorial : https://www.youtube.com/watch?v=tKyRCS1qKTY
 
@@ -176,7 +176,7 @@ Followed this tutorial : https://www.youtube.com/watch?v=tKyRCS1qKTY
 
 #### ![Sample Image](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Dataset_Preparation/images_used/fg_imgs_1.png)
 
-###Masks Created For Foregrounds
+### Masks Created For Foregrounds
 
 I used GIMP tool to create the mask. The steps are metioning below :
 
@@ -193,7 +193,7 @@ So loaded the images to colab, made all non zero values to 255, and saved it as 
 
 ![Sample Image](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Dataset_Preparation/images_used/fg_mask_imgs_1.png)
 
-###Overlay Foreground Over Background
+### Overlay Foreground Over Background
 
 
 
@@ -281,7 +281,7 @@ Changes:
 
 Link to EVADepth.py - https://github.com/rohitrnath/DenseDepth/blob/master/EVADepth.py
 
-####![mask](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Dataset_Preparation/images_used/depth_imgs_1.png)
+#### ![mask](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Dataset_Preparation/images_used/depth_imgs_1.png)
 
 ### ipython notebooks used
 
