@@ -1,4 +1,4 @@
-# # Monocular Depth Estimation And Segmentation [MDEAS]
+# Monocular Depth Estimation And Segmentation [MDEAS]
 
 ## Project Description
 
@@ -47,9 +47,9 @@ Both background and foreground-background image is of size 224\*224\*3, its RGB 
 
 ### Output
 
-***Mask  Accuracy : 96.70%***
+***Mask  Accuracy : 98.00%***
 
-***Depth Accuracy : 92.26%***
+***Depth Accuracy : 93.27%***
 
 * Both mask and depth estimations are of size 224\*224\*1, grey-scale images
 * Used SSIM and MSE criterion combinations to find the loss (Most time taken part)
@@ -70,7 +70,15 @@ Both background and foreground-background image is of size 224\*224\*3, its RGB 
 
 Here I'm describing how I architect the MDEAS model. What are the thought process went through my mind while design each blocks.
 
-At last we will discuss the complete model architecture and designs.
+### MDEAS Model Structure
+
+Here is the Tensorboard plot of MDEAS Model. Below I'm explaining how I came to this architectre designing.
+
+![Depth Decoder - Tensorboard](images/model.png)
+
+[Python implementation of complete model with individual modules are available here](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/model/MDEASModel_backup.py)
+
+
 
 ### MDEAS Model should be *Encoder-Decoder network*
 
@@ -124,8 +132,6 @@ The second ***Convolution layer with strid=2 act like maxpool(2)***, means it re
 
 
 
-#### Initial Block image from Tensorboard graph
-
 ![Init Block-Tensorboard](images/Init-block.png)
 
 
@@ -152,7 +158,7 @@ In case of depthwise convolution with 3x3 kernel, takes only 9 times less parame
 
 ### *Dense-Block* as basic building block
 
-In this project, depth estimation seems to be highly complex than the mask generation. But both are ***dense outputs***. For generating *dense out*, the ***global receptive field of the network should be high***, and the encoder output or the input to decoder should contain *multiple receptive fieds*.After going through [Dense Depth](https://arxiv.org/abs/1812.11941) paper, I understood dense blocks are very-good to carry multiple receptive fields in forward. Reidual blocks in resnet also carrying multipl receptive fields. But as the name suggest, dense-net blocks gives dense receptive fields. So I decided to use ***custom dense-blocks with depthwise convolution***(something similar we made in Quiz-9) as the basic building block of my network.
+In this project, depth estimation seems to be highly complex than the mask generation. But both are ***dense outputs***. For generating *dense out*, the ***global receptive field of the network should be high***, and the encoder output or the input to decoder should contain *multiple receptive fieds*.After going through [Dense Depth](https://arxiv.org/abs/1812.11941) paper, I understood dense blocks are very-good to carry multiple receptive fields in forward. Reidual blocks in resnet also carrying multipl receptive fields. But as the name suggest, dense-net blocks gives dense receptive fields. So I decided to use ***custom dense-blocks with depthwise convolution***(something similar we made in Quiz-9)  ***followed by Relu and batchnormalisation*** as the basic building block of my network.
 
 #### My Custom Dense Block
 
@@ -161,9 +167,9 @@ Dense block consist of 3 densely connected depthwise convolution layers
 ```python
 #Pseudo Code	[dwConv = depthwise convolution]
 x	 = input
-x1 = dwConv(x)
-x2 = dwConv(x + x1)
-x3 = dwConv(x + x1 + x2)
+x1 = BN( Relu( dwConv(x) ) )
+x2 = BN( Relu( dwConv(x + x1) ) )
+x3 = BN( Relu( dwConv(x + x1 + x2) ) )
 out= x + x1 + x2 + x3
 ```
 
@@ -173,11 +179,11 @@ For *Encoder*, ***maxpool*** got added at the end of Dense Block.
 
 For *Decoder*, any of ***upsampling techique*** such as NNConv, Transpose Conv or Pixel shuffle got added at the end of Dense block.
 
-#### Image from Tensorboard graph
+
 
 ![Dense Block-Tensorboard](images/dense-block.png )
 
-
+*Here the Relu and BN are writtern inside the Depthwise convolution block*
 
 
 
@@ -191,7 +197,38 @@ The encoder of the network consist of the initial block and 3* Encoder Blocks. E
 
 #### Complete Encoder Block
 
+I choose 3 encoder blocks after initial blocks, because at the end of encoder the image size will be 14\*14\*256 with maximum receptive field of
+
 <img src="images/Encoder.png" alt="Enocder-Tensorboard" style="zoom:80%;" />
+
+
+
+```python
+# pytorch implementation of dense block
+class EncoderBlock(nn.Module):
+  
+  def __init__(self):
+    super(EncoderBlock, self).__init__()
+
+    self.DenseBlock_1 = DenseBlock( 64, 128)
+    self.pool_1       = nn.MaxPool2d(2)
+
+    self.DenseBlock_2 = DenseBlock( 128, 256)
+    self.pool_2       = nn.MaxPool2d(2)
+
+    self.DenseBlock_3 = DenseBlock( 256, 256)
+    self.pool_3       = nn.MaxPool2d(2)
+
+  def forward(self, x):
+    EC1 = self.pool_1(self.DenseBlock_1(x))
+    EC2 = self.pool_1(self.DenseBlock_2(EC1))
+    EC3 = self.pool_1(self.DenseBlock_3(EC2))
+    out = EC3
+    return out, EC1, EC2
+```
+
+
+
 
 ### Bottle-Neck Design With *Dilated Kernels*
 
@@ -199,9 +236,21 @@ As we discussed in session-6, ***dilated convolution*** can allows flexible aggr
 
 So I decided to add a ***block with dilated kernels of different dilations( 1, 3, 6, 9) as a bottle-neck*** in my network.
 
-<img src="images/dense-block.png" alt="Dense Block-Tensorboard" style="zoom:80%;" />
+The output from the Encoder block will go through a pointwise convolution block to reduce the channel number from 256 to 128.Then this parallely feeds as input to 4 dilation kernels of dilation (1,3,6,9) respectively. 
+
+I comeup with dilations of (1,3,6,9) because the channel size at this point is 14*14( for an input image of size 224\*224). So there is no valid infomation while looking above a range of 10. Also there should be some gap required in between dilation values to et a vast scale contextual information.Each dilation kernel output contains 128 channel, by concatenation all output, this become 512 channels of dense values.
+
+This then apply to two different pointwise convolution blocks in parallel. And goes out of Bottleneck block
+
+Bottleneck gives two outputs, one is for depth(with more channels[256]) and other for mask with comparatively less channels(128). Mask having less channels because, foreground background seperation is less complex as compare with depth estimation.
 
 
+
+<img src="images/Bottleneck.png" alt="Dense Block-Tensorboard" style="zoom:80%;" />
+
+
+
+  
 
 This paper describes how well dilated kernel understands congested scenes and helping in dense output [CSRNet: Dilated Convolutional Neural Networks for Understanding the Highly Congested Scenes](https://www.researchgate.net/publication/323444534_CSRNet_Dilated_Convolutional_Neural_Networks_for_Understanding_the_Highly_Congested_Scenes#pf4)
 
@@ -209,9 +258,17 @@ This paper describes how well dilated kernel understands congested scenes and he
 
 ### Decoder
 
+Decoder having two branches, both starting from the output of Bottlneck block. he output with less number of channels(128) will fed to Mask Decoder Block. Other one with 256 channels fed to Depth Decoder Branch.
+
+Both branches contains 4 major blocks to upsample the current channels of size 14x14 to dense out of size 224*224.
+
 #### Mask Decoder
 
 <img src="images/mask-decoder.png" alt="Depth Decoder - Tensorboard" style="zoom:100%;" />
+
+Mask decoder block consist of 6 modules. In that major 4 modules will upsample the image.
+
+
 
 #### Depth Decoder
 
@@ -219,9 +276,9 @@ This paper describes how well dilated kernel understands congested scenes and he
 
 
 
-### MDEAS Model Structure
+Depth Decoder consist of 5 blocks. In that the 4 blocks will take care of upsampling.
 
-![Depth Decoder - Tensorboard](images/model.png)
+
 
 #### Model Parameters
 
@@ -473,53 +530,302 @@ Estimated Total Size (MB): 95394.64
 ----------------------------------------------------------------
 ```
 
+***While modularising with many return values and multiple outputs and skip connections as return alue. That increase the Foreward/Backward pass size too much(more than 1M MB). That makes the network not fix in the GPU memory. So that made me to include some blocks(Expecially Encoder block modules) inside the main MDEAS class.***
+
+[Here is the modular Code](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/model/MDEASModel_backup.py)  																				 [Here is the less modular code to fit inside GPU memory ](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/model/MDEASModel.py)
 
 
-## Training Strategy
+
+
+
+## Modules and Hyper Params
+
+### Epoch
+
+Initially I did various experiments by trying different epochs. From that I understood that, with 15-20 epoch we can find the behavious of network, like wheher its converging or diverging, about the accuracy of dense out and all.
+
+So I planned to stick with ***epochs = 20***.
+
+
+
+### Bath Size
+
+For my model, for all input images of size 224x224, colab is supporting ***bachsize of 50***
+
+For lesser images size GPU supports even better batch size.
+
+```bash
+input-image		batch-size
+	224x224				50
+	112x112				128
+	80x80					256
+	[All observations are made with Google Colab Tesla P100 GPU]
+```
+
+
 
 ### Optimizer
 
 I tried with SGD and Adam.
 
 * Adam is giving better results very quickly, as compare with SGD.
-* Seems like the auto momentum tuning in Adam helps a lot in not to go in weired results that happen in case of SGD.
+* Auto momentum tuning in Adam helps a lot in not to go in weired results area, that happen in case of SGD.
 * While calculating timeit for each line, I observe SGD is consuming 3Xof time taken for Adam.
 
-Because of these reason I stick with Adam. with initial LR= 0.001, betas=(0.5, 0.999)
+Because of these reason I stick with ***Adam with initial LR= 0.001, betas=(0.5, 0.999)***.
 
-Betas are the movingaverage calculator to fix the momentum. I really impress with the operations.
+Betas are the moving average factor to fix the momentum. I really impress with the technique used to find the momentum.
 
 
 
 ### Scheduler
 
-I tried StepLR, OneCycleLR and CyclicLR.
+I tried StepLR, OneCycleLR, CyclicLR and ReduceLROnPlatu.
 
-Created my own cyclicLR code by improvising the zig-zag plotter code. And stick with cyclicLR
+* StepLR comparatively giving less accuracy outputs. No improvements happening after some point of time.
+* ReduceLROnPlatu needs more epochs to show some good outputs. But the reasults are really good. I got 90% accuracy in Debug training(10k image dataset) for around 20 epochs.
+* oneCycleLR is also works well. Got 90 % accuracy for masks within 15-20 epochs.
+* CyclicLR gives higher acuracies very quickly, but one drawback is that, after 15 epoch in some epochs the accuracy went down but because of Adam, the tuning of momentum the error correction will happen so quick.
 
-Lr_min = 0.00001, Lr_max = 0.001, warmUp epochs = 5, maxCycles = 3.
+I made my own cyclicLR code by improvising the zig-zag plotter code.
 
-After max cycles, stepLR scheduler added with a factor 0.001
+I decided to continue with ***CyclicLR with Lr_min = 0.00001, Lr_max = 0.001, warmUp epochs = 5, maxCycles = 3, cycleEdge=5***.
 
+Once the cyclicLR completes max cycles, then the LR reduces with a factor of 10 in every cycle edge.
 
-
-
-
-
-
-
-
+[Python implementation of CyclicLR](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/LR_Scheduler/CyclicLR.py)
 
 
 
+### Criterion
 
-[![Open Notebook](https://colab.research.google.com/assets/colab-badge.svg)](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Sample-Notebooks/TrainingWith10kImages(DebugMode).ipynb)
-
-
-
-[![Open Notebook](https://colab.research.google.com/assets/colab-badge.svg)](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Sample-Notebooks/TransferLearningWith400kImages.ipynb)
+Choosing the best criterion and the K factor was one of the biggest challenge in this project.
 
 
 
+### Augmentations
 
+I didn't tried any data augmentations. Without any data augmentaions I'm getting better results for my dataset.
+
+I guess hue, saturation kind of pixels intensity changing augmentation I can try in future, other augmentation which makes spatial differences will not help much.
+
+I would like to continue the test with some augmentations such as hue, saturations.
+
+
+
+## Training Strategy
+
+Training 400K images(0.7) is the major hurdle of this project.
+
+As we discussed in the model overview, I tried to make my model light weight as possible to test it faster in google colab.
+
+### Google Colab GPUs
+
+Within google colab, various GPUs are available. In that ***Tesla P100*** is 3 times more faster than other GPUs.
+
+So at the beginning while connecting to GPU, I always check what GPU I got using  *!nvidia-smi* command.
+
+```bash
+!nvidia-smi
++-----------------------------------------------------------------------------+
+| NVIDIA-SMI 440.82       Driver Version: 418.67       CUDA Version: 10.1     |
+|-------------------------------+----------------------+----------------------+
+| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+|===============================+======================+======================|
+|   0  Tesla P100-PCIE...  Off  | 00000000:00:04.0 Off |                    0 |
+| N/A   35C    P0    26W / 250W |      0MiB / 16280MiB |      0%      Default |
++-------------------------------+----------------------+----------------------+
+                                                                               
++-----------------------------------------------------------------------------+
+| Processes:                                                       GPU Memory |
+|  GPU       PID   Type   Process name                             Usage      |
+|=============================================================================|
+|  No running processes found                                                 |
++-----------------------------------------------------------------------------+
+```
+
+If I'm getting anything other than *Tesla P100* I did restart my colab.
+
+
+
+##Training with Transfer Learning 
+
+For training I used a method equivalent to ***Transfer Learning*** .
+
+I did model training in 2 steps.
+
+1. Train the model with 10K images till getting some good result(say 90% accuracy, that may take 20-30 epochs or more). We can call this ***Debug Training***.
+
+   I believe I can run my model for 10-20 epochs within 1-2 hrs by using ***Tesla P100*** from google colab.
+
+   Based on my intutions, by fine training this model with 10K images, I could able to get a model which can work pretty decent for the rest of the dataset.
+
+2. This is the ***Actual Training*** phase. In this training, use the trained weights from debug traning and train the model for 2-5 epochs with the complete dataset.
+
+### Debug Training
+
+*Debug training* done is with *10k images*[7000 train image + 3000 test images] for *20 epochs*
+
+Debug trainig is done for 20 epochs with batchsize of 32. 
+
+So there is around 219 train mini-batches and  94 validation mini-batches present.
+
+
+
+One train epoch took ***5 minutes 30 seconds***
+
+One validation epoch took ***52 seconds***
+
+Overall Debug Training of 20 epochs took ***2 hours 7 minutes***
+
+
+
+***Best Mask Accuracy is  : 96.704% @  14th epoch***
+
+***Best Depth Accuracy is : 92.262% @  14th epoch***
+
+[Github link to Debug Training file](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Sample-Notebooks/DebugTrainingWith10kImages.ipynb)  [![Open Notebook](https://colab.research.google.com/assets/colab-badge.svg)](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Sample-Notebooks/DebugTrainingWith10kImages.ipynb)
+
+
+
+### Actual Training
+
+Actual training took the Debug trained model weights for further training with entire dataset of 400K images.
+
+Actual training is setup for 10 epochs, but the colab runtime got over within 4 epochs( within this 4 epoch itself we got some good results. So there is no need of run it again)
+
+Batch size of 40 is used.
+
+So there is around 7000 train mini-batches and  3000 validation mini-batches present.
+
+
+
+One train epoch took ***1 hour 20 minutes***
+
+One validation epoch took ***11 minutes 20 seconds***
+
+Overall Debug Training of 20 epochs took ***2 hours 7 minutes***
+
+
+
+***Mask   Accuracy is : 98.007%***
+
+***Depth Accuracy is : 93.278%***
+
+[Github link to Actual Training file](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Sample-Notebooks/TransferLearnWith400kImages.ipynb)  [![Open main Notebook](https://colab.research.google.com/assets/colab-badge.svg)](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Sample-Notebooks/TransferLearnWith400kImages.ipynb)
+
+
+
+## Evaluation
+
+For evaluating the model, I used SSIM accuracy and mean-IoU accuracy.
+
+[SSIM implementation](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/criterion/SSIM.py)
+
+[Mean IoU implementatation](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/criterion/mIoU.py)
+
+All the loss criterion used such as SSIM, MSE, L1 and L2 regularises also can be use for evaluation.
+
+### Evaluation Plots
+
+***Total Loss***
+
+![DepthAcc](images/Loss.png)
+
+
+
+
+
+#### For Depth
+
+***Accuracy***
+
+![DepthAcc](images/DepthAcc.png)
+
+
+
+
+
+***SSIM Loss***
+
+![SSIMLoss](images/DepthLossSSIM.png)
+
+
+
+***MSE Loss***
+
+![MSE](images/DepthLossMSE.png)
+
+
+
+
+
+***L1 Loss***
+
+![L1Loss](images/l1DepthLoss.png)
+
+
+
+
+
+#### For Mask
+
+***Accuracy***
+
+![DepthAcc](images/MaskAcc.png)
+
+
+
+***SSIM Loss***
+
+![DepthAcc](images/MaskLossSSIM.png)
+
+
+
+***MSE Loss***
+
+![DepthAcc](images/DepthLossMSE.png)
+
+
+
+***L1 Loss***
+
+![DepthAcc](images/l1MaskLoss.png)
+
+
+
+### Evaluation By Observation
+
+Evaluating the depth estimation and mask generation quality b observation.
+
+#### Debug Training(with 10K images) Output
+
+![evalin](images/evalin.png)
+
+![evalout](images/evalout.png)
+
+
+
+#### Actual Training(Transfer learning with 400Kimages) Outputs
+
+***Foreground-Background Overlay Image***
+
+![fg_bg Image](images/fg_bg.png)
+
+***Mask Groundtruth***
+
+![maskGT Image](images/maskPred.png)
+
+***Mask Prediction***
+
+![maskPred Image](images/maskPred.png)
+
+***Depth Groundtruth***
+
+![depthGT Image](images/depthGT.png)
+
+***Depth Prediction***
+
+![depthPred Image](images/depthPred.png)
 
