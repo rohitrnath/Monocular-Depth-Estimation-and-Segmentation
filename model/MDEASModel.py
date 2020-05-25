@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from BasicBlocks import InitConv, DepthwiseConv, PointwiseConv, TransConv
+from model.BasicBlocks import InitConv, DepthwiseConv, PointwiseConv, TransConv
 # from Decoder import MaskDecoderBlock, DepthDecoderBlock
 
 
@@ -23,7 +23,7 @@ class DenseBlock(nn.Module):
 
         return out
 
-
+'''
 #Initial Block
 class InitBlock(nn.Module):
 
@@ -41,7 +41,7 @@ class InitBlock(nn.Module):
         InitOut   = torch.cat([InitOut_1, InitOut_2], 1)
 
         return InitOut, InitOut_1, InitOut_2
-
+'''
 
 # Encoder Block
 '''class EncoderBlock(nn.Module):
@@ -242,7 +242,7 @@ class MDEASModel(nn.Module):
 ### Encoder Block
         EC1_out = self.pool_1(self.DenseBlock_1(InitOut))
         EC2_out = self.pool_1(self.DenseBlock_2(EC1_out))
-        EC3_out = self.pool_1(self.DenseBlock_3(EC2_out2))
+        EC3_out = self.pool_1(self.DenseBlock_3(EC2_out))
 
 ### Bottleneck Block --(Dilation block)
         MaskBranch, DepthBranch   = self.BottleNeck(EC3_out)

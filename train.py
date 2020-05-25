@@ -4,7 +4,7 @@ import os
 import time
 import datetime
 
-from tqdm import tqdm
+#from tqdm import tqdm
 
 import torch
 import torch.nn as nn
@@ -13,10 +13,11 @@ import torch.nn.utils as utils
 from dataloader.dataloader import GetTrainTestData
 from model.MDEASModel import MDEASModel
 from Logger.SummaryTracker import SummaryTracker
+from Logger.GridImage import show
 from criterion.SSIM import SSIM
 from criterion.mIoU import mIoU
-from LR_Scheduler.cyclicLR import cyclicLR
-from utils.utils import AverageMeter
+from LR_Scheduler.CyclicLR import cyclicLR
+from utils.utils import *
 
 import torchvision.utils as vutils
 from torchsummary import summary
@@ -29,10 +30,13 @@ class Trainer(object):
         self.summary = SummaryTracker(args.logdir)
         
         # Define Dataloader
-        self.train_loader, self.test_loader = GetTrainTestData( arg.dataset, arg.ratio, trainBS=args.batch_size, testBS=args.test_batch_size, DEBUG=args.debug)
+        self.m_train_loader, self.m_test_loader = GetTrainTestData( args.dataset, args.ratio, trainBS=args.batch_size, testBS=args.test_batch_size, DEBUG=args.debug)
 
         # Define network
         self.model = MDEASModel()
+
+        if(args.net_graph):
+          self.summary.addGraph(self.model, 128)
 
         # Define Optimizer
         self.optimizer = torch.optim.Adam(self.model.parameters(),  args.lr, betas=(0.5,0.999))
@@ -44,13 +48,13 @@ class Trainer(object):
         self.criterion_l1   = nn.L1Loss()
         
         # Define lr scheduler
-        self.scheduler = cyclicLR(self.optimizer, lr_min=args.lr_min, lr_max=args.lr_max, batch_size=args.batch_size, startEpoch=args.start_epoch, epochs=args.edge_len, MaxNumCycles=arg.cycles, constEpochs= arg.warmup, constLR= args.lr )
+        self.scheduler = cyclicLR(self.optimizer, lr_min=args.lr_min, lr_max=args.lr_max, batch_size=args.batch_size, startEpoch=args.start_epoch, epochs=args.edge_len, MaxNumCycles=args.cycles, constEpochs= args.warmup, constLR= args.lr )
 
         # Using cuda
         self.device = args.device
-        if args.cuda:
+        if self.device == "cuda":
             self.model = torch.nn.DataParallel(self.model)
-            self.model = self.model.to(device)
+        self.model = self.model.to(self.device)
 
         # Resuming checkpoint
         self.best_val_acc_mask = [ 0.0, 0.0]
@@ -74,9 +78,9 @@ class Trainer(object):
         
         epoch_time = time.time()
 
-        N = len(m_train_loader)
+        N = len(self.m_train_loader)
         self.model.train()
-        for i, sample_batched in enumerate(m_train_loader):
+        for i, sample_batched in enumerate(self.m_train_loader):
           lr = self.scheduler.step(epoch,i)
           #Prepare sample and target
           bg_n    = sample_batched['bg'].to(self.device)
@@ -97,11 +101,11 @@ class Trainer(object):
           l_mask_acc  = self.criterion_ssim(output[1], mask_n)
           l_mask      = 1-l_mask_acc
           l_mask2     = self.criterion_mse(output[1], mask_n)
-          l1_mask     = criterion_l1(output[1], mask_n)
+          l1_mask     = self.criterion_l1(output[1], mask_n)
           l_depth_acc = self.criterion_ssim(output[0], depth_n)
           l_depth     = 1-l_depth_acc
           l_depth2    = self.criterion_mse(output[0], depth_n)
-          l1_depth    = criterion_lq(output[0], depth_n)
+          l1_depth    = self.criterion_l1(output[0], depth_n)
 
           #loss =  (1.0 * l_depth) + (0.00001 * l1_mask)+ (0.00001 * l1_depth) + (.5*l_mask2) #+(1.5 * l_depth.item()) + (0.1*l_depth2) 
           #loss =  (2.0 * l_depth) + (1. * l_mask2) + (0.00001 * l1_depth )+ (0.00001 * l1_mask)
@@ -149,7 +153,7 @@ class Trainer(object):
             if i % 500:
               self.summary.visualize_image("Global",sample_batched, output, global_step)
               # if i% 500:
-              self.summary.save_checkpoint(model)
+              self.summary.save_checkpoint(self.model)
  
         #################
         # Track results #
@@ -207,11 +211,11 @@ class Trainer(object):
             l_mask_acc  = self.criterion_ssim(output[1], mask_n)
             l_mask      = 1-l_mask_acc
             l_mask2     = self.criterion_mse(output[1], mask_n)
-            l1_mask     = criterion_l1(output[1], mask_n)
+            l1_mask     = self.criterion_l1(output[1], mask_n)
             l_depth_acc = self.criterion_ssim(output[0], depth_n)
             l_depth     = 1-l_depth_acc
             l_depth2    = self.criterion_mse(output[0], depth_n)
-            l1_depth    = criterion_lq(output[0], depth_n)
+            l1_depth    = self.criterion_l1(output[0], depth_n)
 
             #loss =  (1.0 * l_depth) + (0.00001 * l1_mask)+ (0.00001 * l1_depth) + (.5*l_mask2) #+(1.5 * l_depth.item()) + (0.1*l_depth2) 
             #loss =  (2.0 * l_depth) + (1. * l_mask2) + (0.00001 * l1_depth )+ (0.00001 * l1_mask)
@@ -257,7 +261,7 @@ class Trainer(object):
           'Mask Acc={val_Acc_Mask:.4f}  Depth Acc={val_Acc_Depth:.4f}\t'
           'Loss {losses.avg:.4f}\t'
           'Mask Loss={losses_mask.avg:.4f}  Depth Loss={losses_depth.avg:.4f}\t\n\n'
-          .format(epoch, i, N, validTime=time_delta_now(val_start_time), timeDrift=time_delta_now(train_start_time),
+          .format(epoch, i, N, validTime=time_delta_now(val_start_time), timeDrift=time_delta_now(self.train_start_time),
                   losses=val_losses, losses_mask=val_losses_mask, val_Acc_Mask=val_Acc_Mask.avg, losses_depth=val_losses_depth, 
                   val_Acc_Depth=val_Acc_Depth.avg, val_IoU_Mask=val_mIoU_Mask.avg, val_IoU_Depth= val_mIoU_Depth.avg))
         
@@ -277,18 +281,13 @@ class Trainer(object):
           self.summary.addToSummary('l1_Mask_Loss/valid', val_losses_l1depth.avg, epoch)
           self.summary.addToSummary('l1_Depth_Loss/valid', val_losses_l1mask.avg, epoch)
 
-          if(val_Acc_Mask.avg > self.best_val_acc_mask[0]):
-            self.best_val_acc_mask = [val_Acc_Mask.avg,epoch]
-          if(val_Acc_Depth.avg > self.best_val_acc_depth[0]):
-            self.best_val_acc_depth = [val_Acc_Depth.avg,epoch]
+        if(val_Acc_Mask.avg > self.best_val_acc_mask[0]):
+          self.best_val_acc_mask = [val_Acc_Mask.avg,epoch]
+        if(val_Acc_Depth.avg > self.best_val_acc_depth[0]):
+          self.best_val_acc_depth = [val_Acc_Depth.avg,epoch]
 
-          self.summary.save_checkpoint( self.model, val_Acc_Mask.avg, val_Acc_Depth.avg)
+        self.summary.save_checkpoint( self.model, val_Acc_Mask.avg, val_Acc_Depth.avg)
 
-
-  print(f"\n\nFinished Training. Best Mask Acc: {best_val_acc_mask[0]} @ epoch {best_val_acc_mask[1]}")
-  print(f"Finished Training. Best Depth Acc: {best_val_acc_depth[0]} @ epoch {best_val_acc_depth[1]}\n")
-
-  self.summary.close()
 
 
 
@@ -297,10 +296,12 @@ def main():
 
     parser.add_argument('--dataset', type=str, default='Dataset/label_data.csv',
                         help='path to dataInfo file')
-    parser.add_argument('--debug', action='store_true', default=
+    parser.add_argument('--debug', type=bool, default=
                     False, help='debug with 1000K images')
     parser.add_argument('--logdir', type=str, default='/content',
                         help='path to Tensorboard Logger')
+    parser.add_argument('--net-graph', type=bool, default=
+                    False, help='Graph the net in tensor board')
     parser.add_argument('--ratio', type=float, default=0.7,
                         help='Train:Test data ratio( default : 0.7)')
     parser.add_argument('--workers', type=int, default=4,
@@ -333,7 +334,7 @@ def main():
                         help='number of cycles for cyclicLR scheduler')
     parser.add_argument('--warmup', type=int, default=5, metavar='W',
                         help='warm-up epochs before cyclicLR scheduler')
-    parser.add_argument('--edge', type=int, default=5, metavar='E',
+    parser.add_argument('--edge_len', type=int, default=5, metavar='E',
                         help='Edge epochs for cyclicLR scheduler')
 
 
@@ -367,8 +368,11 @@ def main():
 
     for epoch in range(trainer.args.start_epoch, trainer.args.epochs):
         trainer.training(epoch)
-        if not trainer.args.no_val 
+        if not trainer.args.no_val: 
             trainer.validation( epoch, eval_limit)
+    
+    print(f"\n\nFinished Training. Best Mask Acc: {trainer.best_val_acc_mask[0]} @ epoch {trainer.best_val_acc_mask[1]}")
+    print(f"Finished Training. Best Depth Acc: {trainer.best_val_acc_depth[0]} @ epoch {trainer.best_val_acc_depth[1]}\n")
 
     trainer.summary.close()
 

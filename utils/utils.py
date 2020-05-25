@@ -1,6 +1,7 @@
 import matplotlib
 import matplotlib.cm
 import numpy as np
+import time
 
 
 def time_delta_now(ts: float) -> str:

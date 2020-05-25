@@ -80,10 +80,10 @@ def GetTrainTestData(labelInfo, ratio, DEBUG=False,  trainBS=50, testBS=50):
     train_data = MDEASDataloader( all_shuffled, ratio, getNoTransform(), getNoTransform(), getNoTransform(), getNoTransform())
     test_data  = MDEASDataloader( all_shuffled, 1.0-ratio, getNoTransform(), getNoTransform(), getNoTransform(), getNoTransform(),TrainFlag= False)
     
-    train_loader = torch.utils.data.DataLoader(train_set, batch_size=trainBS,
+    train_loader = torch.utils.data.DataLoader(train_data, batch_size=trainBS,
                                           shuffle=True, num_workers=4)
 
-    test_loader = torch.utils.data.DataLoader(test_set, batch_size=testBS,
+    test_loader = torch.utils.data.DataLoader(test_data, batch_size=testBS,
                                               shuffle=False, num_workers=4)
 
     return train_loader, test_loader
