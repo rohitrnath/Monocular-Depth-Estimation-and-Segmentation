@@ -69,8 +69,10 @@ class Trainer(object):
         # Init training loss
         batch_time = AverageMeter()
         losses     = AverageMeter()
-        losses_depth = AverageMeter()
-        losses_mask  = AverageMeter()
+        losses_depth_ssim = AverageMeter()
+        losses_mask_ssim  = AverageMeter()
+        losses_depth_mse = AverageMeter()
+        losses_mask_mse  = AverageMeter()
         losses_l1depth = AverageMeter()
         losses_l1mask = AverageMeter()
         train_Acc_Mask     = AverageMeter()
@@ -107,16 +109,19 @@ class Trainer(object):
           l_depth2    = self.criterion_mse(output[0], depth_n)
           l1_depth    = self.criterion_l1(output[0], depth_n)
 
+          #loss =  (1.0 * l_depth) + (0.3* l1_mask)
           #loss =  (1.0 * l_depth) + (0.00001 * l1_mask)+ (0.00001 * l1_depth) + (.5*l_mask2) #+(1.5 * l_depth.item()) + (0.1*l_depth2) 
           #loss =  (2.0 * l_depth) + (1. * l_mask2) + (0.00001 * l1_depth )+ (0.00001 * l1_mask)
-          loss =  (2.0 * l_depth) +(.4 * l_mask) + (.1 * l_depth2) + (1. * l_mask2) + (0.000001 * l1_depth )+ (0.00001 * l1_mask)
+          loss =  (2.0 * l_depth) +(.4 * l_mask) + (.1 * l_depth2) + (1. * l_mask2) + (0.000001 * l1_depth )+ (0.000001 * l1_mask)
           # Update step
           loss.backward()
           self.optimizer.step()
         
           losses.update(loss.data.item(), bg_n.size(0))
-          losses_depth.update(l_depth.data.item(), bg_n.size(0))
-          losses_mask.update(l_mask.data.item(), bg_n.size(0))
+          losses_depth_ssim.update(l_depth.data.item(), bg_n.size(0))
+          losses_mask_ssim.update(l_mask.data.item(), bg_n.size(0))
+          losses_depth_mse.update(l_depth2.data.item(), bg_n.size(0))
+          losses_mask_mse.update(l_mask2.data.item(), bg_n.size(0))
           losses_l1depth.update(l1_depth.data.item(), bg_n.size(0))
           losses_l1mask.update(l1_mask.data.item(), bg_n.size(0))
 
@@ -142,8 +147,10 @@ class Trainer(object):
             global_step = epoch*N+i
             # Write to summary
             self.summary.addToSummary('Global/Loss', losses.val, global_step)
-            self.summary.addToSummary('Global/Mask_Loss_ssim', losses_mask.val, global_step)
-            self.summary.addToSummary('Global/Depth_Loss_ssim', losses_depth.val, global_step)
+            self.summary.addToSummary('Global/Mask_Loss_ssim', losses_mask_ssim.val, global_step)
+            self.summary.addToSummary('Global/Depth_Loss_ssim', losses_depth_ssim.val, global_step)
+            self.summary.addToSummary('Global/Mask_Loss_mse', losses_mask_mse.val, global_step)
+            self.summary.addToSummary('Global/Depth_Loss_mse', losses_depth_mse.val, global_step)
             self.summary.addToSummary('Global/Mask_Loss_l1', losses_l1depth.val, global_step)
             self.summary.addToSummary('Global/Depth_Loss_l1', losses_l1mask.val, global_step)
 
@@ -163,8 +170,10 @@ class Trainer(object):
         self.summary.addToSummary('Loss/train', losses.avg, epoch)
         self.summary.addToSummary('Mask_Acc/train',   train_Acc_Mask.avg, epoch)
         self.summary.addToSummary('Depth_Acc/train',  train_Acc_Depth.avg, epoch)
-        self.summary.addToSummary('Mask_Loss/train',  losses_mask.avg, epoch)
-        self.summary.addToSummary('Depth_Loss/train', losses_depth.avg, epoch)
+        self.summary.addToSummary('Mask_Loss_ssim/train',  losses_mask_ssim.avg, epoch)
+        self.summary.addToSummary('Depth_Loss_ssim/train', losses_depth_ssim.avg, epoch)
+        self.summary.addToSummary('Mask_Loss_mse/train',  losses_mask_mse.avg, epoch)
+        self.summary.addToSummary('Depth_Loss_mse/train', losses_depth_mse.avg, epoch)
         self.summary.addToSummary('l1_Mask_Loss/train', losses_l1depth.avg, epoch)
         self.summary.addToSummary('l1_Depth_Loss/train', losses_l1mask.avg, epoch)
         #print in console
@@ -175,15 +184,17 @@ class Trainer(object):
               'Mask Loss={losses_mask.avg:.4f}  Depth Loss={losses_depth.avg:.4f}\t'
               'Mask Acc={train_Acc_Mask.avg:.4f}  Depth Acc={train_Acc_Depth.avg:.4f}\t'
               .format(epoch, epochTime=time_delta_now(epoch_time), timeDrift=time_delta_now(self.train_start_time),
-                      losses=losses, losses_mask=losses_mask, train_Acc_Mask=train_Acc_Mask, losses_depth=losses_depth, 
+                      losses=losses, losses_mask=losses_mask_ssim, train_Acc_Mask=train_Acc_Mask, losses_depth=losses_depth_ssim, 
                       train_Acc_Depth=train_Acc_Depth))
 
 
     def validation(self, epoch, eval_limit):
         # Init validation loss
         val_losses     = AverageMeter()
-        val_losses_depth = AverageMeter()
-        val_losses_mask  = AverageMeter()
+        val_losses_depth_ssim = AverageMeter()
+        val_losses_mask_ssim  = AverageMeter()
+        val_losses_depth_mse = AverageMeter()
+        val_losses_mask_mse  = AverageMeter()
         val_losses_l1depth = AverageMeter()
         val_losses_l1mask = AverageMeter()
         val_Acc_Depth = AverageMeter()
@@ -219,14 +230,16 @@ class Trainer(object):
 
             #loss =  (1.0 * l_depth) + (0.00001 * l1_mask)+ (0.00001 * l1_depth) + (.5*l_mask2) #+(1.5 * l_depth.item()) + (0.1*l_depth2) 
             #loss =  (2.0 * l_depth) + (1. * l_mask2) + (0.00001 * l1_depth )+ (0.00001 * l1_mask)
-            loss =  (2.0 * l_depth) +(.4 * l_mask) + (.1 * l_depth2) + (1. * l_mask2) + (0.000001 * l1_depth )+ (0.00001 * l1_mask)
+            loss =  (2.0 * l_depth) +(.4 * l_mask) + (.1 * l_depth2) + (1. * l_mask2) + (0.000001 * l1_depth )+ (0.000001 * l1_mask)
 
 
             # pbar2.set_description(desc = f'[{epoch}] loss={loss.item()} mask={l_mask.item()} depth={l_depth.item()}')
 
             val_losses.update(loss.data.item(), bg_n.size(0))
-            val_losses_depth.update(l_depth.data.item(), bg_n.size(0))
-            val_losses_mask.update(l_mask.data.item(), bg_n.size(0))
+            val_losses_depth_ssim.update(l_depth.data.item(), bg_n.size(0))
+            val_losses_mask_ssim.update(l_mask.data.item(), bg_n.size(0))
+            val_losses_depth_mse.update(l_depth2.data.item(), bg_n.size(0))
+            val_losses_mask_mse.update(l_mask2.data.item(), bg_n.size(0))
             val_losses_l1depth.update(l1_depth.data.item(), bg_n.size(0))
             val_losses_l1mask.update(l1_mask.data.item(), bg_n.size(0))
 
@@ -262,10 +275,10 @@ class Trainer(object):
           'Loss {losses.avg:.4f}\t'
           'Mask Loss={losses_mask.avg:.4f}  Depth Loss={losses_depth.avg:.4f}\t\n\n'
           .format(epoch, i, N, validTime=time_delta_now(val_start_time), timeDrift=time_delta_now(self.train_start_time),
-                  losses=val_losses, losses_mask=val_losses_mask, val_Acc_Mask=val_Acc_Mask.avg, losses_depth=val_losses_depth, 
+                  losses=val_losses, losses_mask=val_losses_mask_ssim, val_Acc_Mask=val_Acc_Mask.avg, losses_depth=val_losses_depth_ssim, 
                   val_Acc_Depth=val_Acc_Depth.avg, val_IoU_Mask=val_mIoU_Mask.avg, val_IoU_Depth= val_mIoU_Depth.avg))
         
-        if eval_limit != -1:
+        if eval_limit == -1:
           #################
           # Track results #
           #################
@@ -276,17 +289,19 @@ class Trainer(object):
           self.summary.addToSummary('Depth_Acc/valid',  val_Acc_Depth.avg, epoch)
           self.summary.addToSummary('Mask_mIoU/valid',   val_mIoU_Mask.avg, epoch)
           self.summary.addToSummary('Depth_mIoU/valid',  val_mIoU_Depth.avg, epoch)
-          self.summary.addToSummary('Mask_Loss/valid',  val_losses_mask.avg, epoch)
-          self.summary.addToSummary('Depth_Loss/valid', val_losses_depth.avg, epoch)
+          self.summary.addToSummary('Mask_Loss_ssim/valid',  val_losses_mask_ssim.avg, epoch)
+          self.summary.addToSummary('Depth_Loss_ssim/valid', val_losses_depth_ssim.avg, epoch)
+          self.summary.addToSummary('Mask_Loss_mse/valid',  val_losses_mask_mse.avg, epoch)
+          self.summary.addToSummary('Depth_Loss_mse/valid', val_losses_depth_mse.avg, epoch)
           self.summary.addToSummary('l1_Mask_Loss/valid', val_losses_l1depth.avg, epoch)
           self.summary.addToSummary('l1_Depth_Loss/valid', val_losses_l1mask.avg, epoch)
 
-        if(val_Acc_Mask.avg > self.best_val_acc_mask[0]):
-          self.best_val_acc_mask = [val_Acc_Mask.avg,epoch]
-        if(val_Acc_Depth.avg > self.best_val_acc_depth[0]):
-          self.best_val_acc_depth = [val_Acc_Depth.avg,epoch]
+          if(val_Acc_Mask.avg > self.best_val_acc_mask[0]):
+            self.best_val_acc_mask = [val_Acc_Mask.avg,epoch]
+          if(val_Acc_Depth.avg > self.best_val_acc_depth[0]):
+            self.best_val_acc_depth = [val_Acc_Depth.avg,epoch]
 
-        self.summary.save_checkpoint( self.model, val_Acc_Mask.avg, val_Acc_Depth.avg)
+          self.summary.save_checkpoint( self.model, val_Acc_Mask.avg, val_Acc_Depth.avg)
 
 
 
