@@ -477,6 +477,42 @@ Estimated Total Size (MB): 95394.64
 
 ## Training Strategy
 
+### Optimizer
+
+I tried with SGD and Adam.
+
+* Adam is giving better results very quickly, as compare with SGD.
+* Seems like the auto momentum tuning in Adam helps a lot in not to go in weired results that happen in case of SGD.
+* While calculating timeit for each line, I observe SGD is consuming 3Xof time taken for Adam.
+
+Because of these reason I stick with Adam. with initial LR= 0.001, betas=(0.5, 0.999)
+
+Betas are the movingaverage calculator to fix the momentum. I really impress with the operations.
+
+
+
+### Scheduler
+
+I tried StepLR, OneCycleLR and CyclicLR.
+
+Created my own cyclicLR code by improvising the zig-zag plotter code. And stick with cyclicLR
+
+Lr_min = 0.00001, Lr_max = 0.001, warmUp epochs = 5, maxCycles = 3.
+
+After max cycles, stepLR scheduler added with a factor 0.001
+
+
+
+
+
+
+
+
+
+
+
+
+
 [![Open Notebook](https://colab.research.google.com/assets/colab-badge.svg)](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Sample-Notebooks/TrainingWith10kImages(DebugMode).ipynb)
 
 
