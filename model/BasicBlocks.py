@@ -12,11 +12,11 @@ def PointwiseConv(in_panels, out_panels, last=False):
               nn.BatchNorm2d(out_panels)
             ))
 def DepthwiseConv(in_panels, out_panels, dilation=1):
-    DepthDialBlock = nn.Sequential(
+    DepthConvBlock = nn.Sequential(
             nn.Conv2d( in_panels, in_panels, kernel_size=(3,3), padding=dilation, groups=in_panels,  dilation = dilation),
             PointwiseConv( in_panels, out_panels),
         )
-    return DepthDialBlock
+    return DepthConvBlock
 
 def TransConv(in_panels, out_panels, dilation=1):
     #o = (i -1)*s - 2*p + k + output_padding 

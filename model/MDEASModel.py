@@ -241,8 +241,8 @@ class MDEASModel(nn.Module):
 
 ### Encoder Block
         EC1_out = self.pool_1(self.DenseBlock_1(InitOut))
-        EC2_out = self.pool_1(self.DenseBlock_2(EC1_out))
-        EC3_out = self.pool_1(self.DenseBlock_3(EC2_out))
+        EC2_out = self.pool_2(self.DenseBlock_2(EC1_out))
+        EC3_out = self.pool_3(self.DenseBlock_3(EC2_out))
 
 ### Bottleneck Block --(Dilation block)
         MaskBranch, DepthBranch   = self.BottleNeck(EC3_out)
