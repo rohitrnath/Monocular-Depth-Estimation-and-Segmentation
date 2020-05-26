@@ -46,7 +46,7 @@ Both background and foreground-background image is of size 224\*224\*3, its RGB 
 * MDEAS model having custom ***dense-net blocks***.
 * Bottleneck block consist of ***dilation kernels***.
 * Decoder network with two branches( for depth and mask separately)
-* ***NN Conv, Pixel shuffling and Transpose convolution*** are used for upsample.
+* ***Pixel shuffling, NN Conv and Transpose convolution*** are used for upsample.
 * Used ***sigmoid at the end of Mask decoder block***
 
 ----------------------------------------------------------------
@@ -74,10 +74,10 @@ Both background and foreground-background image is of size 224\*224\*3, its RGB 
 
 ## Contents
 
-* [Model Overview](#Model-Overview)
+* [**Model Overview](#Model-Overview)
 * [Modules and Hyper Params](#Modules-and-Hyper-Params)
 * [Training Strategy](#Training-Strategy)
-* [Training with Transfer Learning ](#Training-with-Transfer Learning )
+* [**Training with Transfer Learning ](#Training-with-Transfer Learning )
 * [Evaluation](#Evaluation)
 
 ## Model Overview
@@ -293,7 +293,7 @@ So I decided to add a ***block with dilated kernels of different dilations( 1, 3
 
 The output from the Encoder block will go through a pointwise convolution block to reduce the channel number from 256 to 128.Then this parallely feeds as input to 4 dilation kernels of dilation (1,3,6,9) respectively. 
 
-I comeup with dilations of (1,3,6,9) because the channel size at this point is 14*14( for an input image of size 224\*224). So there is no valid infomation while looking above a range of 10. Also there should be some gap required in between dilation values to et a vast scale contextual information.Each dilation kernel output contains 128 channel, by concatenation all output, this become 512 channels of dense values.
+I comeup with dilations of (1,3,6,9) because the channel size at this point is 14*14( for an input image of size 224\*224). So there is no valid infomation while looking above a range of 10. Also there should be some gap required in between dilation values to et a vast scale contextual information.Each dilation kernel output contains 128 channel. By **concatenating*** all output, this become 512 channels of dense values.
 
 This then apply to two different pointwise convolution blocks in parallel. And goes out of Bottleneck block
 
@@ -301,7 +301,7 @@ Bottleneck gives two outputs, one is for depth(with more channels[256]) and othe
 
 
 
-<img src="images/BottleNeck.png" alt="Dense Block-Tensorboard" style="zoom:80%;" />
+<img src="images/BottleNeck.png" alt="Dense Block-Tensorboard" style="zoom:70%;" />
 
 
 
@@ -315,23 +315,53 @@ This paper describes how well dilated kernel understands congested scenes and he
 
 Decoder having two branches, both starting from the output of Bottlneck block. he output with less number of channels(128) will fed to Mask Decoder Block. Other one with 256 channels fed to Depth Decoder Branch.
 
-Both branches contains 4 major blocks to upsample the current channels of size 14x14 to dense out of size 224*224.
+Both branches contains 4 major blocks to upsample the current channels of size 14x14 to dense out of size 224x224.
 
 
 
 #### Mask Decoder
 
-Mask decoder block consist of 6 modules. In that major 4 modules will upsample the image.
-
-<img src="images/mask-decoder.png" alt="Depth Decoder - Tensorboard" style="zoom:100%;" />
 
 
+<img src="images/mask-decoder.png" alt="Depth Decoder - Tensorboard" style="zoom:60%;" />
+
+Mask decoder block consist of 6 modules. In that first 4 modules upsample the image from 14x14 to 224x224.
+
+* ***First 3 blocks are NNConv blocks***
+
+  NxN Convolution block consist of one dense block is followed by interpolation with factor of 2.
+
+  Its observe that ***nearest interpolation is giving better result as compare with bilinear interpolation***.
+
+  So I stick with nearest interpolation in my NNConv block.
+
+<img src="images/NNConv.png" alt="NNConv" style="zoom:50%;" />
+
+* ***Next block is Shuffle Convolution block***
+
+  This block consist of one dense block is followed by ***pixel shuffling*** with factor of 2.
+
+  <img src="images/shuffleConv.png" alt="pixel shuffle" style="zoom:50%;" />
+
+  First I chose transpose convolution(De-Conv) at this position. But in the output image I observe huge checker-board issues. Thats why I choose pixel shuffling at this stage. Pixel shuffling algorithm is famous to avoid checker-board issues.
+
+  
 
 #### Depth Decoder
 
-Depth Decoder consist of 5 blocks. In that the 4 blocks will take care of upsampling.
+Depth Decoder consist of 5 blocks. In that the first 4 blocks will take care of upsampling the image from 14x14 to 224x224.
 
-![Depth Decoder - Tensorboard](images/depth-decoder.png)
+* First block is doing NNConv, that take the input of 14\*14\*256 and convert it into 28\*28\*156.
+
+  In NNConvolution upsampling is done using interpolation.
+
+* Next 3 blocks are doing pixelshuffle mechanism for upsampling.
+
+* Last layer is using pointwise convolution to convert 224x224x16 image to 224x224x1 dense output. 
+
+* By fine tuning of weight by doing continuous feed forward and back propagate, the dense out can become the depth estimation grayscale image.
+
+<img src="images/depth-decoder.png" alt="Depth Decoder - Tensorboard" style="zoom:70%;" />
 
 
 
@@ -773,13 +803,13 @@ I would like to continue the test with some augmentations such as hue, saturatio
 
   
 
-## Training Strategy
+## Training Strategies
 
 Training 400K images(0.7) is the major hurdle of this project.
 
 As we discussed in the model overview, I tried to make my model light weight as possible to test it faster in google colab.
 
-### Check Time Consumption
+### Time Consumption Calculation
 
 I check the time consumption line by line using %lprun magic with line-profiler utility.***
 
@@ -801,6 +831,8 @@ I check the time consumption line by line using %lprun magic with line-profiler 
 * *SGD optimizer* consuming 2 times the time that taken by *Adam*.
 * Initially my backpropogation taking too much time because of heavy gradiant size.
 * Writing images to tensorboard and saving model weights consumes so much of time, so I reduced the periodicity of checkpoints.
+
+
 
 ### Google Colab GPUs
 
@@ -832,6 +864,22 @@ If I'm getting anything other than *Tesla P100* I did restart my colab.
 
 
 
+### Traning Package
+
+In the MDEAS package, we can train/validate the model by running ***train.py***.
+
+First we should create dataset csv file as describes in *Dataset_Preparation* [readme](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Dataset_Preparation/README.md) file.
+
+By running *train.py* with needed arguments, we could able to train/test/evaluate the model easily.
+
+***train.py - Arguments and Usage***
+
+<img src="images/trainer.png" alt="train.py" style="zoom:65%;" />
+
+[Implementation of Trainer module is available here](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/train.py)
+
+
+
 ##Training with Transfer Learning 
 
 For training I used a method equivalent to ***Transfer Learning*** .
@@ -853,6 +901,13 @@ I did model training in 2 steps.
 Debug trainig is done for 20 epochs with batchsize of 32. 
 
 So there is around 219 train mini-batches and  94 validation mini-batches present.
+
+```python
+#For debug train inside colab
+%cd Monocular-Depth-Estimation-and-Segmentation
+
+!python train.py --debug True --logdir /content/gdrive/My\ Drive/summary --batch-size 32 --test-batch-size 32 
+```
 
 
 
@@ -882,6 +937,13 @@ Batch size of 40 is used.
 
 So there is around 7000 train mini-batches and  3000 validation mini-batches present.
 
+```python
+#To actul train in colab
+%cd Monocular-Depth-Estimation-and-Segmentation
+
+!python train.py --resume /content/best-depth-model.pth --logdir /content/gdrive/My\ Drive/summary --batch-size 40 --test-batch-size 40 --epochs 10 --warmup 0 --edge_len 3 --cycles 2 --lr_min=0.00005 --lr_max 0.005
+```
+
 
 
 One train epoch took ***1 hour 20 minutes***
@@ -910,7 +972,7 @@ For evaluating the model, I used SSIM accuracy and mean-IoU accuracy.
 
 [Mean IoU implementatation](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/criterion/mIoU.py)
 
-All the loss criterion used such as SSIM, MSE, L1 and L2 regularises also can be use for evaluation.
+All the loss criterion used such as SSIM, MSE and L1 regulariser also can be use for evaluation.
 
 ### Evaluation Plots
 
@@ -1018,5 +1080,5 @@ Evaluating the depth estimation and mask generation quality b observation.
 
 ***[Github link to Debug Training file](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Sample-Notebooks/DebugTrainingWith10kImages.ipynb)***                                                                                                         
 
- ***[ Github link to Actual Training file](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Sample-Notebooks/TransferLearnWith400kImages.ipynb)***  
+***[ Github link to Actual Training file](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Sample-Notebooks/TransferLearnWith400kImages.ipynb)***  
 
