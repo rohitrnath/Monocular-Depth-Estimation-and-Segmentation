@@ -26,6 +26,10 @@ For foregtound-background seperation(mask generation), the input to the model is
 
 ## Summary
 
+### Personal Objective
+
+As because I'm from embedded systems domain, I'm always conscious about memory and cpu optimisation. So I was thinking of designing a model with less params also it should be efficient to do the job with some decent accuracy.
+
 ### Input Image
 
 Both background and foreground-background image is of size 224\*224\*3, its RGB images.
@@ -34,9 +38,9 @@ Both background and foreground-background image is of size 224\*224\*3, its RGB 
 
 ----------------------------------------------------------------
 
-### Model
+### [Model](#MDEAS-Model-Structure)
 
-**Total params: 1,521,026  (1.5M)**
+**Total params: 1,521,026  (1.5M)** 
 
 * Used an Encoder-(Bottleneck)-Decoder network
 * MDEAS model having custom ***dense-net blocks***.
@@ -154,7 +158,7 @@ The second ***Convolution layer with strid=2 act like maxpool(2)***, means it re
 
 ### Use *Depthwise Convolution* for a light-weight model
 
-​								As because I'm from embedded systems domain, I'm always conscious about memory and cpu optimisation. So I was thinking of designing a model with less params also it should be efficient to do the job. In the world of CNN, while thinking of light-weight model, the first option comes to our mind will be MobileNet. In mobilenet use of depthwise convolution  blocks makes it lighter. So I decided to use ***depthwise convolutions in my architecture.***
+In the world of CNN, while thinking of light-weight model, the first option comes to our mind will be MobileNet. In mobilenet use of depthwise convolution  blocks makes it lighter. So I decided to use ***depthwise convolutions in my architecture.***
 
 ```python
 #Depthwise convolution in pytorch
@@ -213,7 +217,7 @@ The encoder of the network consist of the initial block and 3* Encoder Blocks. E
 
 #### Complete Encoder Block
 
-I choose 3 encoder blocks after initial blocks, because at the end of encoder the image size will be 14\*14\*256 with maximum receptive field of
+I choose 3 encoder blocks after initial blocks, because of that at the end of encoder the image size will be 14\*14\*256 with maximum receptive field of 103[RF table is given below]. Which is pretty good input to the *Bottleneck block*.
 
 <img src="images/Encoder.png" alt="Enocder-Tensorboard" style="zoom:80%;" />
 
@@ -241,6 +245,42 @@ class EncoderBlock(nn.Module):
     EC3 = self.pool_1(self.DenseBlock_3(EC2))
     out = EC3
     return out, EC1, EC2
+```
+
+
+
+#### Rceptive Field in Encoder
+
+```python
+#  input 			Kernel			  	Output		 Max Receptive Field
+#Init Block#
+224x224x3			3x3x32				224x224x32				3 
+224x224x32		3x3x32,s=2		112x112x32				5
+
+112x112x32(2)   concat			112x112x64				5
+
+#Encoder block-1
+112x112x64    3x3x64				112x112x64				9
+112x112x64		3x3x64				112x112x64				13
+112x112x64		3x3x64				112x112x64				17
+112x112x64		1x1x128				112x112x128				17
+112x112x128		maxpool(2)		56x56x128					19
+
+#Encoder block-2
+56x56x128     3x3x128				56x56x128					27
+56x56x128			3x3x128				56x56x128					35
+56x56x128			3x3x128				56x56x128					43
+56x56x128			1x1x256				56x56x256					43
+56x56x256			maxpool(2)		28x28x128					47
+
+#Encoder block-3
+28x28x256    	28x28x256				28x28x256				63
+28x28x256			28x28x256				28x28x256				79
+28x28x256			28x28x256				28x28x256				95
+28x28x256			1x1x256					28x28x256				95
+28x28x256			maxpool(2)  		14x14x256				103
+
+The encoder output image of size 14x14x256 with maximum receptive field of 103[jump in to bottleneck = 16]
 ```
 
 
@@ -751,17 +791,16 @@ I check the time consumption line by line using %lprun magic with line-profiler 
 %lprun -f train train()
 ```
 
-***[Here is the complete line-by-line time computation logs](time consumption/timeConsumeWithCustomSSIM.txt)***
+***[Here is the complete line-by-line time computation logs](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/time%20consumption/timeConsumeWithCustomSSIM.txt)***
 
-#### Observations
+
+
+#### Observations and Changes
 
 * *tqdm-pbar description* consuming so much of time as compared with print. So removed print from my model.
 * *SGD optimizer* consuming 2 times the time that taken by *Adam*.
 * Initially my backpropogation taking too much time because of heavy gradiant size.
-
-
-
-
+* Writing images to tensorboard and saving model weights consumes so much of time, so I reduced the periodicity of checkpoints.
 
 ### Google Colab GPUs
 
@@ -853,9 +892,9 @@ Overall time couldn't calculate as because the runtime got expired while running
 
 
 
-***Mask   Accuracy is : 98.007%***
+***Mask  Evaluation  Accuracy is : 98.007%***
 
-***Depth Accuracy is : 93.278%***
+***Depth Evaluation Accuracy is : 93.278%***
 
 [Github link to Actual Training file](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Sample-Notebooks/TransferLearnWith400kImages.ipynb)  [![Open main Notebook](https://colab.research.google.com/assets/colab-badge.svg)](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Sample-Notebooks/TransferLearnWith400kImages.ipynb)
 
