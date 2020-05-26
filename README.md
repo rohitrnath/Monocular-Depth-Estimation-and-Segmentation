@@ -58,13 +58,9 @@ Both background and foreground-background image is of size 224\*224\*3, its RGB 
 
 ![Summary Image](images/summary.png)
 
+***[Github link to Debug Training file](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Sample-Notebooks/DebugTrainingWith10kImages.ipynb)***                                                                                                           ***[ Github link to Actual Training file](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Sample-Notebooks/TransferLearnWith400kImages.ipynb)***  
 
-
-----------------------------------------------------------------
-
-## Preparations (Design Strategies)
-
-
+## 
 
 ## Model Overview
 
@@ -601,6 +597,34 @@ Once the cyclicLR completes max cycles, then the LR reduces with a factor of 10 
 
 Choosing the best criterion and the K factor was one of the biggest challenge in this project.
 
+After a lot of trial and error, I end up to use-
+
+* SSIM(Structural Similarity Indexing)
+
+  SSIM is helpful to find the depth image. This needs higher K value as compare to others because this criterio plays the major role for depth loss calculation. And depth estimation is the complex task as compare to mask generation.
+
+  The SSIM module with kornio package consumed too much of computational time as because its not running in tensor form. So I used the SSIM pytorch implementation from [here](https://github.com/Po-Hsun-Su/pytorch-ssim)
+
+  
+
+* MSE Loss(Mean square error loss)
+
+  Mask generation requires the direct model output to ground truth pixel to pixel difference.. So I thought of using MSE Loss and L1 regularisation for mask prediction
+
+  This is the squared version of L2 regularisation. Thats why we are not using L2 regulariser.
+
+* L1 regularisation
+
+  Similar to MSE Loss, this also can be use to find the pixel to pixel difference.
+
+****
+
+***Loss Calculation***
+
+```python
+loss =  2.0*ssim_depth + 0.4*sim_mask + 0.1*mse_depth + 1.0*mse_mask + 0.000001*L1_depth + 0.000001*L1_mask
+```
+
 
 
 ### Augmentations
@@ -828,4 +852,8 @@ Evaluating the depth estimation and mask generation quality b observation.
 ***Depth Prediction***
 
 ![depthPred Image](images/depthPred.png)
+
+
+
+***[Github link to Debug Training file](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Sample-Notebooks/DebugTrainingWith10kImages.ipynb)***                                                                                                           ***[ Github link to Actual Training file](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Sample-Notebooks/TransferLearnWith400kImages.ipynb)***  
 
