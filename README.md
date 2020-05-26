@@ -69,7 +69,7 @@ Both background and foreground-background image is of size 224\*224\*3, its RGB 
 ## Contents
 
 * [Model Overview](#Model-Overview)
-* [Modules and Hyper Params](#Modules-and-Hyper Params)
+* [Modules and Hyper Params](#Modules-and-Hype-Params)
 * [Training Strategy](#Training-Strategy)
 * [Evaluation](#Evaluation)
 
