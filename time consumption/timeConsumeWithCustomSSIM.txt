@@ -1,0 +1,228 @@
+Timer unit: 1e-06 s
+
+Total time: 156.618 s
+File: <ipython-input-33-899228ae9e6e>
+Function: test at line 11
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    11                                           def test():
+    12         1          6.0      6.0      0.0    epochs=1
+    13         1          3.0      3.0      0.0    lr=0.001
+    14         1         99.0     99.0      0.0    criterion = nn.MSELoss()
+    15         1         59.0     59.0      0.0    l1_criterion = nn.L1Loss()
+    16                                           
+    17         1       2823.0   2823.0      0.0    optimizer = torch.optim.Adam( model.parameters(), lr )
+    18         1          2.0      2.0      0.0    best_val_acc_mask = [0,0]
+    19         1          2.0      2.0      0.0    best_val_acc_depth = [0,0]
+    20                                             # Start training...
+    21                                             # print(f"Training starts at {datetime.datetime.now()} ")
+    22         1          3.0      3.0      0.0    train_start_time = time.time()
+    23                                             # Store the best validation loss
+    24         2         10.0      5.0      0.0    for epoch in range(epochs):   
+    25                                                 # torch.save(model.state_dict(), path)
+    26         1          2.0      2.0      0.0        adjust_lr = False
+    27                                                 # Adjust learning rate if flag is set
+    28         1          2.0      2.0      0.0        if adjust_lr:
+    29                                                   lr = adjust_learning_rate(optimizer, epoch, lr)
+    30                                           
+    31         1          2.0      2.0      0.0        epoch_time = time.time()
+    32                                           
+    33                                                 # Init training loss
+    34         1          8.0      8.0      0.0        batch_time = AverageMeter()
+    35         1          3.0      3.0      0.0        losses     = AverageMeter()
+    36         1          3.0      3.0      0.0        losses_depth = AverageMeter()
+    37         1          3.0      3.0      0.0        losses_mask  = AverageMeter()
+    38         1          3.0      3.0      0.0        losses_l1depth = AverageMeter()
+    39         1          3.0      3.0      0.0        losses_l1mask = AverageMeter()
+    40         1          3.0      3.0      0.0        train_Acc_Mask     = AverageMeter()
+    41         1          3.0      3.0      0.0        train_Acc_Depth     = AverageMeter()
+    42                                           
+    43                                                 # Init validation loss
+    44         1          3.0      3.0      0.0        val_losses     = AverageMeter()
+    45         1          2.0      2.0      0.0        val_losses_depth = AverageMeter()
+    46         1          3.0      3.0      0.0        val_losses_mask  = AverageMeter()
+    47         1          3.0      3.0      0.0        val_losses_l1depth = AverageMeter()
+    48         1          3.0      3.0      0.0        val_losses_l1mask = AverageMeter()
+    49         1          3.0      3.0      0.0        val_Acc_Depth = AverageMeter()
+    50         1          4.0      4.0      0.0        val_Acc_Mask = AverageMeter()
+    51                                                 
+    52         1         44.0     44.0      0.0        N = len(m_train_loader)
+    53                                           
+    54                                                 # Switch to train mode
+    55         1       2450.0   2450.0      0.0        model.train()
+    56                                           
+    57         1       6842.0   6842.0      0.0        pbar1 = tqdm(m_train_loader)
+    58         1          4.0      4.0      0.0        end = time.time()
+    59                                                 #################
+    60                                                 # Training loop #
+    61                                                 #################
+    62       220   10062650.0  45739.3      6.4        for i, sample_batched in enumerate(pbar1):
+    63                                           
+    64                                                     #Prepare sample and target
+    65       219    1458402.0   6659.4      0.9            bg_n    = sample_batched['bg'].to(device)
+    66       219    1414042.0   6456.8      0.9            fg_bg_n = sample_batched['fg_bg'].to(device)
+    67       219     467715.0   2135.7      0.3            mask_n  = sample_batched['mask'].to(device)
+    68       219     464901.0   2122.8      0.3            depth_n = sample_batched['depth'].to(device)
+    69                                           
+    70                                                     # Normalize depth
+    71                                                     # depth_n = DepthNorm( depth )
+    72                                           
+    73                                                     # One optimization iteration
+    74       219     830817.0   3793.7      0.5            optimizer.zero_grad()
+    75                                           
+    76                                                     # Predict
+    77       219    5010151.0  22877.4      3.2            output = model( bg_n, fg_bg_n)
+    78                                           
+    79                                                     # Compute the loss
+    80       219      69246.0    316.2      0.0            l_mask  = criterion(output[1], mask_n)
+    81       219      39671.0    181.1      0.0            l1_mask = l1_criterion(output[1], mask_n)
+    82       219   13599638.0  62098.8      8.7            l_depth = torch.clamp((1 - ssim(output[0], depth_n, val_range = 1000.0 / 10.0)) * 0.5, 0, 1)
+    83       219       9056.0     41.4      0.0            l_depth = l_depth.mean()
+    84       219      45442.0    207.5      0.0            l1_depth = l1_criterion(output[0], depth_n)
+    85                                           
+    86       219    2032875.0   9282.5      1.3            loss = (1.0 * l_depth.item()) + (1.0 * l_mask) + (0.1 * l1_depth) + (0.3 * l1_mask)
+    87                                           
+    88                                                     # Update step
+    89       219    3655697.0  16692.7      2.3            loss.backward()
+    90       219   44410692.0 202788.5     28.4            optimizer.step()
+    91                                                   
+    92       219      47946.0    218.9      0.0            losses.update(loss.data.item(), bg_n.size(0))
+    93       219       5435.0     24.8      0.0            losses_depth.update(l_depth.data.item(), bg_n.size(0))
+    94       219       4401.0     20.1      0.0            losses_mask.update(l_mask.data.item(), bg_n.size(0))
+    95       219       4317.0     19.7      0.0            losses_l1depth.update(l1_depth.data.item(), bg_n.size(0))
+    96       219       4227.0     19.3      0.0            losses_l1mask.update(l1_mask.data.item(), bg_n.size(0))
+    97                                           
+    98                                                     #Measure Accuracy
+    99       219     126932.0    579.6      0.1            acc_depth = mIoU( output[0], depth_n)
+   100       219      63060.0    287.9      0.0            acc_mask  = mIoU( output[1], mask_n)
+   101       219      15161.0     69.2      0.0            train_Acc_Mask.update(acc_mask, fg_bg_n.size(0))
+   102       219      10508.0     48.0      0.0            train_Acc_Depth.update(acc_depth, fg_bg_n.size(0))
+   103                                           
+   104                                                     
+   105                                           
+   106                                                     # # Measure elapsed time
+   107                                                     # batch_time.update(time.time() - end)
+   108                                                     # end = time.time()
+   109                                                     # eta = str(datetime.timedelta(seconds=int(batch_time.val*(N - i))))
+   110       219     276464.0   1262.4      0.2            pbar1.set_description(desc = f'[{epoch}] loss={loss.item()} mask={l_mask.item()} depth={l_depth.item()}')
+   111                                                     
+   112                                                     # Log progress
+   113       219        905.0      4.1      0.0            if i % 10 == 0:
+   114        22         79.0      3.6      0.0              global_step = epoch*N+i
+   115                                                       # Write to summary
+   116        22      10830.0    492.3      0.0              _writer.addToSummary('Global/Loss', losses.val, global_step)
+   117        22       1747.0     79.4      0.0              _writer.addToSummary('Global/Mask_Loss', losses_mask.val, global_step)
+   118        22       1165.0     53.0      0.0              _writer.addToSummary('Global/Depth_Loss', losses_depth.val, global_step)
+   119        22       1038.0     47.2      0.0              _writer.addToSummary('Global/l1_Mask_Loss', losses_l1depth.val, global_step)
+   120        22        963.0     43.8      0.0              _writer.addToSummary('Global/l1_Depth_Loss', losses_l1mask.val, global_step)
+   121                                           
+   122        22      32310.0   1468.6      0.0              _writer.addToSummary('Global/Mask_Acc', train_Acc_Mask.val, global_step)
+   123        22      24858.0   1129.9      0.0              _writer.addToSummary('Global/Depth_Acc', train_Acc_Depth.val, global_step)
+   124                                           
+   125        22   51354979.0 2334317.2     32.8              _writer.visualize_image("Global",sample_batched, output, global_step)
+   126                                           
+   127                                           
+   128        22        116.0      5.3      0.0              if i% 500:
+   129        21    3946602.0 187933.4      2.5                  _writer.save_checkpoint(model)
+   130                                                       # if i % 2500 == 0 and i!=0:
+   131                                                       #   print('Epoch: [{0}][{1}/{2}]\t'
+   132                                                       #       'Epoch Time={epochTime}\t'
+   133                                                       #       'Time Drift={timeDrift}\t'
+   134                                                       #       'Loss {losses.avg:.4f}\t'
+   135                                                       #       'Mask Loss={losses_mask.avg:.4f} Acc={train_Acc_Mask.avg:.4f}\t'
+   136                                                       #       'Depth Loss={losses_depth.avg:.4f} Acc={train_Acc_Depth.avg:.4f}\t'
+   137                                                       #       .format(epoch, i, N, epochTime=time_delta_now(epoch_time), timeDrift=time_delta_now(train_start_time),
+   138                                                       #         losses=losses, losses_mask=losses_mask, train_Acc_Mask=train_Acc_Mask, losses_depth=losses_depth, 
+   139                                                       #         train_Acc_Depth=train_Acc_Depth))
+   140                                           
+   141                                                 #print in console
+   142         1          9.0      9.0      0.0        print('Epoch: [{0}]\t'
+   143                                                       'Epoch Time={epochTime}\t'
+   144                                                       'Time Drift={timeDrift}\t'
+   145                                                       'Loss {losses.avg:.4f}\t'
+   146                                                       'Mask Loss={losses_mask.avg:.4f}  Depth Loss={losses_depth.avg:.4f}\t'
+   147                                                       'Mask Acc={train_Acc_Mask.avg:.4f}  Depth Acc={train_Acc_Depth.avg:.4f}\t'
+   148         1         31.0     31.0      0.0              .format(epoch, epochTime=time_delta_now(epoch_time), timeDrift=time_delta_now(train_start_time),
+   149         1          3.0      3.0      0.0                      losses=losses, losses_mask=losses_mask, train_Acc_Mask=train_Acc_Mask, losses_depth=losses_depth, 
+   150         1        681.0    681.0      0.0                      train_Acc_Depth=train_Acc_Depth))
+   151                                           
+   152         1         38.0     38.0      0.0        print("Let's Validate with some mini batches")
+   153         1          4.0      4.0      0.0        val_start_time = time.time()
+   154         1       4070.0   4070.0      0.0        model.eval()
+   155         1         18.0     18.0      0.0        with torch.no_grad():
+   156         1         35.0     35.0      0.0          N = len(m_test_loader)
+   157         1       3035.0   3035.0      0.0          pbar2 = tqdm(m_test_loader)
+   158        48   10320987.0 215020.6      6.6          for i, sample_batch in enumerate(pbar2):
+   159        47     452148.0   9620.2      0.3            bg_n    = sample_batched['bg'].to(device)
+   160        47     465637.0   9907.2      0.3            fg_bg_n = sample_batched['fg_bg'].to(device)
+   161        47     130504.0   2776.7      0.1            mask_n  = sample_batched['mask'].to(device)
+   162        47     185821.0   3953.6      0.1            depth_n = sample_batched['depth'].to(device)
+   163                                           
+   164        47    1867185.0  39727.3      1.2            output = model(bg_n,fg_bg_n)
+   165                                                     
+   166        47      56124.0   1194.1      0.0            l_mask  = criterion(output[1], mask_n)
+   167        47      25852.0    550.0      0.0            l1_mask = l1_criterion(output[1], mask_n)
+   168        47      19324.0    411.1      0.0            l_depth = criterion(output[0], depth_n)
+   169        47       9151.0    194.7      0.0            l1_depth = l1_criterion(output[0], depth_n)
+   170                                           
+   171        47     908191.0  19323.2      0.6            loss = (2.0 * l_depth.item()) + (1.0 * l_mask) + (0.1 * l1_depth) + (0.3 * l1_mask)
+   172                                           
+   173        47     263682.0   5610.3      0.2            pbar2.set_description(desc = f'[{epoch}] loss={loss.item()} mask={l_mask.item()} depth={l_depth.item()}')
+   174                                           
+   175        47      11530.0    245.3      0.0            val_losses.update(loss.data.item(), bg_n.size(0))
+   176        47       2148.0     45.7      0.0            val_losses_depth.update(l_depth.data.item(), bg_n.size(0))
+   177        47       1439.0     30.6      0.0            val_losses_mask.update(l_mask.data.item(), bg_n.size(0))
+   178        47       1570.0     33.4      0.0            val_losses_l1depth.update(l1_depth.data.item(), bg_n.size(0))
+   179        47       1366.0     29.1      0.0            val_losses_l1mask.update(l1_mask.data.item(), bg_n.size(0))
+   180                                           
+   181                                                     #Measure Accuracy
+   182        47      34784.0    740.1      0.0            acc_depth = mIoU( output[0], depth_n)
+   183        47      35804.0    761.8      0.0            acc_mask  = mIoU( output[1], mask_n)
+   184        47       5236.0    111.4      0.0            val_Acc_Mask.update(acc_mask, fg_bg_n.size(0))
+   185        47       3763.0     80.1      0.0            val_Acc_Depth.update(acc_depth, fg_bg_n.size(0))
+   186        47        224.0      4.8      0.0            if i > 100:
+   187                                                       break
+   188         1    2105252.0 2105252.0      1.3        _writer.visualize_image("validation",sample_batched, output, epoch)
+   189         1          5.0      5.0      0.0        print('Epoch: [{0}][{1}/{2}]\t'
+   190                                                   'Valid Time={validTime}\t'
+   191                                                   'Time Drift={timeDrift}\t'
+   192                                                   'Loss {losses.avg:.4f}\t'
+   193                                                   'Mask Loss={losses_mask.avg:.4f} Acc={val_Acc_Mask:.4f}\t'
+   194                                                   'Depth Loss={losses_depth.avg:.4f} Acc={val_Acc_Depth:.4f}\t'
+   195         1         37.0     37.0      0.0          .format(epoch, i, N, validTime=time_delta_now(val_start_time), timeDrift=time_delta_now(train_start_time),
+   196         1          3.0      3.0      0.0                  losses=val_losses, losses_mask=val_losses_mask, val_Acc_Mask=train_Acc_Mask.avg, losses_depth=val_losses_depth, 
+   197         1      41712.0  41712.0      0.0                  val_Acc_Depth=train_Acc_Depth.avg))
+   198         1      10439.0  10439.0      0.0        print("Sample Validated Images")
+   199                                                 
+   200                                           
+   201                                                 #################
+   202                                                 # Track results #
+   203                                                 #################
+   204                                                 #Log Train Epoch
+   205         1        179.0    179.0      0.0        _writer.addToSummary('Loss/train', losses.avg, epoch)
+   206         1         47.0     47.0      0.0        _writer.addToSummary('Loss/valid', val_losses.avg, epoch)
+   207         1        248.0    248.0      0.0        _writer.addToSummary('Mask_Acc/train',   train_Acc_Mask.avg, epoch)
+   208         1       5268.0   5268.0      0.0        _writer.addToSummary('Mask_Acc/valid',   val_Acc_Mask.avg, epoch)
+   209         1       5265.0   5265.0      0.0        _writer.addToSummary('Depth_Acc/train',  train_Acc_Depth.avg, epoch)
+   210         1       5241.0   5241.0      0.0        _writer.addToSummary('Depth_Acc/valid',  val_Acc_Depth.avg, epoch)
+   211         1         50.0     50.0      0.0        _writer.addToSummary('Mask_Loss/train',  losses_mask.val, epoch)
+   212         1         34.0     34.0      0.0        _writer.addToSummary('Mask_Loss/valid',  val_losses_mask.val, epoch)
+   213         1         32.0     32.0      0.0        _writer.addToSummary('Depth_Loss/train', losses_depth.val, epoch)
+   214         1         31.0     31.0      0.0        _writer.addToSummary('Depth_Loss/valid', val_losses_depth.val, epoch)
+   215         1       2911.0   2911.0      0.0        _writer.addToSummary('l1_Mask_Loss/train', losses_l1depth.val, epoch)
+   216         1         93.0     93.0      0.0        _writer.addToSummary('l1_Mask_Loss/valid', val_losses_l1depth.val, epoch)
+   217         1         56.0     56.0      0.0        _writer.addToSummary('l1_Depth_Loss/train', losses_l1mask.val, epoch)
+   218         1         36.0     36.0      0.0        _writer.addToSummary('l1_Depth_Loss/valid', val_losses_l1mask.val, epoch)
+   219                                           
+   220         1        470.0    470.0      0.0        if(val_Acc_Mask.avg > best_val_acc_mask[0]):
+   221                                                   best_val_acc_mask = [val_Acc_Mask.avg,epoch]
+   222         1         69.0     69.0      0.0        if(val_Acc_Depth.avg > best_val_acc_depth[0]):
+   223         1          3.0      3.0      0.0          best_val_acc_depth = [val_Acc_Depth.avg,epoch]
+   224                                           
+   225         1     110290.0 110290.0      0.1        _writer.save_checkpoint( model, val_Acc_Mask.avg, val_Acc_Depth.avg)
+   226                                           
+   227         1        310.0    310.0      0.0    print(f"Finished Training. Best Mask Acc: {best_val_acc_mask[0]} @ epoch {best_val_acc_mask[1]}")
+   228         1        345.0    345.0      0.0    print(f"Finished Training. Best Depth Acc: {best_val_acc_depth[0]} @ epoch {best_val_acc_depth[1]}")
+   229                                           
+   230         1       1285.0   1285.0      0.0    _writer.close()

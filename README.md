@@ -739,6 +739,30 @@ Training 400K images(0.7) is the major hurdle of this project.
 
 As we discussed in the model overview, I tried to make my model light weight as possible to test it faster in google colab.
 
+### Check Time Consumption
+
+I check the time consumption line by line using %lprun magic with line-profiler utility.***
+
+```python
+#Procedure to check line consumpton line by line.
+!pip install line_profiler
+
+%load_ext line_profiler
+%lprun -f train train()
+```
+
+***[Here is the complete line-by-line time computation logs](time consumption/timeConsumeWithCustomSSIM.txt)***
+
+#### Observations
+
+* *tqdm-pbar description* consuming so much of time as compared with print. So removed print from my model.
+* *SGD optimizer* consuming 2 times the time that taken by *Adam*.
+* Initially my backpropogation taking too much time because of heavy gradiant size.
+
+
+
+
+
 ### Google Colab GPUs
 
 Within google colab, various GPUs are available. In that ***Tesla P100*** is 3 times more faster than other GPUs.
