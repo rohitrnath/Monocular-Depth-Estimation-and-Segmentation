@@ -77,7 +77,7 @@ Both background and foreground-background image is of size 224\*224\*3, its RGB 
 * [**Model Overview](#Model-Overview)
 * [Modules and Hyper Params](#Modules-and-Hyper-Params)
 * [Training Strategy](#Training-Strategy)
-* [**Training with Transfer Learning ](#Training-with-Transfer Learning )
+* [**Training with Transfer Learning ](#Training-with-Transfer-Learning )
 * [Evaluation](#Evaluation)
 
 ## Model Overview
