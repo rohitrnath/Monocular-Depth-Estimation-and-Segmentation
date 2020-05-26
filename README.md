@@ -60,6 +60,8 @@ Both background and foreground-background image is of size 224\*224\*3, its RGB 
 
 ***[Github link to Debug Training file](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Sample-Notebooks/DebugTrainingWith10kImages.ipynb)***                                                                                                          
 
+*Actual training is done by using the trained weights from Debug Training*
+
  ***[ Github link to Actual Training file](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Sample-Notebooks/TransferLearnWith400kImages.ipynb)***  
 
 ## 
@@ -70,15 +72,17 @@ Here I'm describing how I architect the MDEAS model. What are the thought proces
 
 ### MDEAS Model Structure
 
-Here is the Tensorboard plot of MDEAS Model. Below I'm explaining how I came to this architectre designing.
+Here is the MDEAS Model Architecture. 
 
-![Depth Decoder - Tensorboard](images/model.png)
+![Depth Decoder - Tensorboard](images/modelArch.png)
+
+Below I'm explaining how I came to this architectre designing.
 
 [Python implementation of complete model with individual modules are available here](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/model/MDEASModel_backup.py)
 
 
 
-### MDEAS Model should be *Encoder-Decoder network*
+#### MDEAS Model should be *Encoder-Decoder network*
 
 At the initial stage many modeling plans came through my mind. I thought of using Unet, because its a state-of-art model to handle dense outputs. But its very heavy model for this purpose. So end-up with a decision to create my own ***encoder-decoder*** model.
 
@@ -86,7 +90,7 @@ At the initial stage many modeling plans came through my mind. I thought of usin
 
 
 
-### Concatenate two input images at Initial Block of Encoder
+#### Concatenate two input images at Initial Block of Encoder
 
 At the input of the network, we have to handle two input images. So the initial idea was, to concatenate the two images of size [224\*224\*3] to a single block of size [224\*224\*6]. But  if we do concatenation at before any convolutions, then only 3 layers will occupy with foreground, so the background information will dominate in the feed forward.
 
@@ -94,7 +98,7 @@ So I decided to pass the input images through separate convolution blocks and th
 
 I thought of to use separate  2\* ***normal convolutions at initial block***, while other blocks uses depthwise convolution. By using normal convolution, this layer can able to fetch more features from the input image and aggragating both convolution output at the concatenation layer will help to provide fine tune data for other layers.
 
-#### Initial Block implementation in pytorch
+##### Initial Block implementation in pytorch
 
 ```python
 # Initial convolution implmentation in pytorch
@@ -134,7 +138,7 @@ The second ***Convolution layer with strid=2 act like maxpool(2)***, means it re
 
 
 
-### Use *Depthwise Convolution* for a light-weight model
+#### Use *Depthwise Convolution* for a light-weight model
 
 ​								As because I'm from embedded systems domain, I'm always conscious about memory and cpu optimisation. So I was thinking of designing a model with less params also it should be efficient to do the job. In the world of CNN, while thinking of light-weight model, the first option comes to our mind will be MobileNet. In mobilenet use of depthwise convolution  blocks makes it lighter. So I decided to use ***depthwise convolutions in my architecture.***
 
@@ -154,11 +158,11 @@ In case of depthwise convolution with 3x3 kernel, takes only 9 times less parame
 
 
 
-### *Dense-Block* as basic building block
+#### *Dense-Block* as basic building block
 
 In this project, depth estimation seems to be highly complex than the mask generation. But both are ***dense outputs***. For generating *dense out*, the ***global receptive field of the network should be high***, and the encoder output or the input to decoder should contain *multiple receptive fieds*.After going through [Dense Depth](https://arxiv.org/abs/1812.11941) paper, I understood dense blocks are very-good to carry multiple receptive fields in forward. Reidual blocks in resnet also carrying multipl receptive fields. But as the name suggest, dense-net blocks gives dense receptive fields. So I decided to use ***custom dense-blocks with depthwise convolution***(something similar we made in Quiz-9)  ***followed by Relu and batchnormalisation*** as the basic building block of my network.
 
-#### My Custom Dense Block
+##### My Custom Dense Block
 
 Dense block consist of 3 densely connected depthwise convolution layers
 
@@ -185,7 +189,7 @@ For *Decoder*, any of ***upsampling techique*** such as NNConv, Transpose Conv o
 
 
 
-### Encoder Design with Dense blocks
+#### Encoder Design with Dense blocks
 
 The encoder of the network consist of the initial block and 3* Encoder Blocks. Each encoder blocks consist of one Dense block followed by a maxpool(2) layer.
 
@@ -227,8 +231,7 @@ class EncoderBlock(nn.Module):
 
 
 
-
-### Bottle-Neck Design With *Dilated Kernels*
+#### Bottle-Neck Design With *Dilated Kernels*
 
 As we discussed in session-6, ***dilated convolution*** can allows flexible aggregation of the multi-scale contextual information while keeping the same resolution. So by using multiple dilated convolutions in parallel on our network  can able to see image in multi-scale ranges and aggragation of these information is very useful for dense output. 
 
@@ -254,13 +257,13 @@ This paper describes how well dilated kernel understands congested scenes and he
 
 
 
-### Decoder
+#### Decoder
 
 Decoder having two branches, both starting from the output of Bottlneck block. he output with less number of channels(128) will fed to Mask Decoder Block. Other one with 256 channels fed to Depth Decoder Branch.
 
 Both branches contains 4 major blocks to upsample the current channels of size 14x14 to dense out of size 224*224.
 
-#### Mask Decoder
+##### Mask Decoder
 
 Mask decoder block consist of 6 modules. In that major 4 modules will upsample the image.
 
@@ -268,13 +271,17 @@ Mask decoder block consist of 6 modules. In that major 4 modules will upsample t
 
 
 
-#### Depth Decoder
+##### Depth Decoder
 
 Depth Decoder consist of 5 blocks. In that the 4 blocks will take care of upsampling.
 
 ![Depth Decoder - Tensorboard](images/depth-decoder.png)
 
 
+
+#### Overall Tensorboard View
+
+![Depth Decoder - Tensorboard](images/model.png)
 
 
 
