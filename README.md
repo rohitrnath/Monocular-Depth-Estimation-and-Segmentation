@@ -73,6 +73,7 @@ Both background and foreground-background image is of size 224\*224\*3, its RGB 
 * [Model Overview](#Model-Overview)
 * [Modules and Hyper Params](#Modules-and-Hyper-Params)
 * [Training Strategy](#Training-Strategy)
+* [Training with Transfer Learning ](#Training-with-Transfer Learning )
 * [Evaluation](#Evaluation)
 
 ## Model Overview
@@ -602,12 +603,12 @@ Betas are the moving average factor to fix the momentum. I really impress with t
 
 ### Scheduler
 
-I tried StepLR, OneCycleLR, CyclicLR and ReduceLROnPlatu.
+I tried ***StepLR, OneCycleLR, CyclicLR and ReduceLROnPlatu***.
 
 * StepLR comparatively giving less accuracy outputs. No improvements happening after some point of time.
 * ReduceLROnPlatu needs more epochs to show some good outputs. But the reasults are really good. I got 90% accuracy in Debug training(10k image dataset) for around 20 epochs.
 * oneCycleLR is also works well. Got 90 % accuracy for masks within 15-20 epochs.
-* CyclicLR gives higher acuracies very quickly, but one drawback is that, after 15 epoch in some epochs the accuracy went down but because of Adam, the tuning of momentum the error correction will happen so quick.
+* CyclicLR*** gives higher acuracies very quickly, but one drawback is that, after 15 epoch in some epochs the accuracy went down but because of Adam, the tuning of momentum the error correction will happen so quick.
 
 I made my own cyclicLR code by improvising the zig-zag plotter code.
 
@@ -684,9 +685,15 @@ loss =  2.0*ssim_depth + 0.4*ssim_mask + 0.1*mse_depth + 1.0*mse_mask + 0.000001
 
 ### Accuracy
 
-Accuracy of images got calculated using SSIM and mean IoU.
+Accuracy of images got  calculated using SSIM and mean-IoU.
 
-SSIM 
+While running each epoch, the accuracy is calculated by averaging over the images.
+
+Got some error in mean-IoU implementation. So accuracy calculations continued with SSIM.
+
+Both SSIM and mean-IoU values varies from 0 to 1. Multiplying this value with 100 gives accuracy in percentage.
+
+
 
 ### Augmentations
 
@@ -697,6 +704,20 @@ I guess hue, saturation kind of pixels intensity changing augmentation I can try
 I would like to continue the test with some augmentations such as hue, saturations.
 
 
+
+### Logs
+
+* Created SummaryWriter class to handle all the logs that includes data to Tensorboard, checkpoints to save.
+
+  
+
+* ***Tensorboard*** is used to log the loss and accuracy values from the training. This avoides the additional RAM consumption for print/display information in notebook. And made the notebook lighter.
+
+* Initially I used ***tqdm*** to see the progress bar with some loss and accuracy description.
+
+  But while running the !timeit magic for line by line computational time calculation its observed that, tqdm progress bar consuming around 5600 microseconds while normat printf is only consumes only 5 microseconds. So I continued with print function in a way it make prints only 10 times in an epoch.
+
+* I
 
 ## Training Strategy
 
@@ -766,9 +787,9 @@ Overall Debug Training of 20 epochs took ***2 hours 7 minutes***
 
 
 
-***Best Mask Accuracy is  : 96.704% @  14th epoch***
+***Best Mask Validation Accuracy is  : 96.704% @  14th epoch***
 
-***Best Depth Accuracy is : 92.262% @  14th epoch***
+***Best Depth Validation Accuracy is : 92.262% @  14th epoch***
 
 [Github link to Debug Training file](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Sample-Notebooks/DebugTrainingWith10kImages.ipynb)  [![Open Notebook](https://colab.research.google.com/assets/colab-badge.svg)](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Sample-Notebooks/DebugTrainingWith10kImages.ipynb)
 
@@ -778,7 +799,7 @@ Overall Debug Training of 20 epochs took ***2 hours 7 minutes***
 
 Actual training took the Debug trained model weights for further training with entire dataset of 400K images.
 
-Actual training is setup for 10 epochs, but the colab runtime got over within 4 epochs( within this 4 epoch itself we got some good results. So there is no need of run it again)
+Actual training is setup for 10 epochs, but the colab runtime got over within 4 epochs( within this 4 epoch itself we got some good results with more than 93% depth accuracy. So there is no need of run it again)
 
 Batch size of 40 is used.
 
@@ -790,7 +811,7 @@ One train epoch took ***1 hour 20 minutes***
 
 One validation epoch took ***11 minutes 20 seconds***
 
-Overall Debug Training of 20 epochs took ***2 hours 7 minutes***
+Overall time couldn't calculate as because the runtime got expired while running 3rd epoch.
 
 
 
@@ -801,6 +822,8 @@ Overall Debug Training of 20 epochs took ***2 hours 7 minutes***
 [Github link to Actual Training file](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Sample-Notebooks/TransferLearnWith400kImages.ipynb)  [![Open main Notebook](https://colab.research.google.com/assets/colab-badge.svg)](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Sample-Notebooks/TransferLearnWith400kImages.ipynb)
 
 *All the output images and plots are available in Evaluation session*
+
+
 
 ## Evaluation
 
