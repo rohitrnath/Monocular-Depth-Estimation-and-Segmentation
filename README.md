@@ -4,6 +4,8 @@
 
 In this image estimation project we are creating a CNN-Network that can do monocular depth estimation and foreground-background seperation simulataneously.
 
+***Use Case : For autonomous bots like 'rumba' we can use this model for real-time tracking of changes in the environment by using foreground-background seperation, and could able to find the distance with depth estimation.***
+
 The MDEAS network should take two images as input.
 
 1. Background image(bg).
@@ -621,35 +623,70 @@ Once the cyclicLR completes max cycles, then the LR reduces with a factor of 10 
 
 Choosing the best criterion and the K factor was one of the biggest challenge in this project.
 
-After a lot of trial and error, I end up to use-
+* **MSE Loss(Mean square error loss)**
 
-* SSIM(Structural Similarity Indexing)
+  MSE is looking at pixelwise variations between two images.  It looks at pixels independently.
 
-  SSIM is helpful to find the depth image. This needs higher K value as compare to others because this criterio plays the major role for depth loss calculation. And depth estimation is the complex task as compare to mask generation.
+  Mask generation requires the direct model output to ground truth pixel to pixel difference. So MSE can have a major role in tuning Mask output.
 
-  The SSIM module with kornio package consumed too much of computational time as because its not running in tensor form. So I used the SSIM pytorch implementation from [here](https://github.com/Po-Hsun-Su/pytorch-ssim)
+  ***This is the squared version of L2 regularisation. So that, while using MSELoss, we don't need to use L2 regulariser.***
 
   
 
-* MSE Loss(Mean square error loss)
+* **SSIM(Structural Similarity Indexing)**
 
-  Mask generation requires the direct model output to ground truth pixel to pixel difference.. So I thought of using MSE Loss and L1 regularisation for mask prediction
+  Instead of treating pixels independently, structural similarity group the pixels and find the difference in image.
 
-  This is the squared version of L2 regularisation. Thats why we are not using L2 regulariser.
+  When we look at group of pixels. that gives better representation of image, rather than looking at pixels.
 
-* L1 regularisation
+  ```python
+  SSIM(A,B) = L(A,B) * C(A,B) * S(A,B)
+  while A and B are image inputs
+  			L = Luminance
+  			C = Contrast
+  			S = Structure
+  Output of SSIM
+  0 <= SSIM <=1
+  close to 0 means the image similarity is imperfect.
+  close to 1 means the image similarity is perfect
+  
+  So to find loss with respect to SSIM, 
+  SSIMLoss(A,B) = 1 - SSIM(A,B)
+  ```
 
-  Similar to MSE Loss, this also can be use to find the pixel to pixel difference.
+  SSIM Loss calculation very is helpful to to tune depth estimation image. 
 
-****
+  ***The SSIM module with kornio package consumed too much of computational time as because its not running in tensor form. So I used the SSIM pytorch implementation from [here](https://github.com/Po-Hsun-Su/pytorch-ssim).***
+
+  This implementation takes only 1/100th of time which concumed by Kornio.
+
+  *More about computation time is described in Training Strategies*
+
+* **L1 Regularisation**
+
+  L1 Norm is also look at pixels independently. L1 regulariser can be use  to ***avoid Over-fitting***.
+
+
+
+I decided to calculate compund loss by using multiple criterions. Diffrent K values should use for each criterion.
+
+SSIM Loss criterion can be use for depth loss calculation. This is applicable to mask also, but MSELoss is something better for mask. So I added SSIM Loss criterion with less K value to compund loss.
+
+Depth criterion needs higher K value as compare to criterions for Mask. Because depth estimation is the complex task as compare to mask generation. 
 
 ***Loss Calculation***
 
 ```python
-loss =  2.0*ssim_depth + 0.4*sim_mask + 0.1*mse_depth + 1.0*mse_mask + 0.000001*L1_depth + 0.000001*L1_mask
+loss =  2.0*ssim_depth + 0.4*ssim_mask + 0.1*mse_depth + 1.0*mse_mask + 0.000001*L1_depth + 0.000001*L1_mask
 ```
 
 
+
+### Accuracy
+
+Accuracy of images got calculated using SSIM and mean IoU.
+
+SSIM 
 
 ### Augmentations
 
