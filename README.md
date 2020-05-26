@@ -37,11 +37,11 @@ Both background and foreground-background image is of size 224\*224\*3, its RGB 
 **Total params: 1,521,026  (1.5M)**
 
 * Used an Encoder-(Bottleneck)-Decoder network
-* MDEAS model having custom dense-net blocks.
-* Bottleneck block consist of dilation kernels.
+* MDEAS model having custom ***dense-net blocks***.
+* Bottleneck block consist of ***dilation kernels***.
 * Decoder network with two branches( for depth and mask separately)
-* NN Conv, Pixel shuffling and Transpose convolution are used for upsample.
-* Used *sigmoid* at the end of *Mask decoder block*
+* ***NN Conv, Pixel shuffling and Transpose convolution*** are used for upsample.
+* Used ***sigmoid at the end of Mask decoder block***
 
 ----------------------------------------------------------------
 
