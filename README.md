@@ -260,19 +260,19 @@ Both branches contains 4 major blocks to upsample the current channels of size 1
 
 #### Mask Decoder
 
-<img src="images/mask-decoder.png" alt="Depth Decoder - Tensorboard" style="zoom:100%;" />
-
 Mask decoder block consist of 6 modules. In that major 4 modules will upsample the image.
+
+<img src="images/mask-decoder.png" alt="Depth Decoder - Tensorboard" style="zoom:100%;" />
 
 
 
 #### Depth Decoder
 
+Depth Decoder consist of 5 blocks. In that the 4 blocks will take care of upsampling.
+
 ![Depth Decoder - Tensorboard](images/depth-decoder.png)
 
 
-
-Depth Decoder consist of 5 blocks. In that the 4 blocks will take care of upsampling.
 
 
 
