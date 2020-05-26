@@ -258,7 +258,7 @@ Bottleneck gives two outputs, one is for depth(with more channels[256]) and othe
 
 
 
-<img src="images/Bottleneck.png" alt="Dense Block-Tensorboard" style="zoom:80%;" />
+<img src="images/BottleNeck.png" alt="Dense Block-Tensorboard" style="zoom:80%;" />
 
 
 
