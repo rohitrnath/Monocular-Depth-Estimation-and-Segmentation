@@ -58,7 +58,9 @@ Both background and foreground-background image is of size 224\*224\*3, its RGB 
 
 ![Summary Image](images/summary.png)
 
-***[Github link to Debug Training file](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Sample-Notebooks/DebugTrainingWith10kImages.ipynb)***                                                                                                           ***[ Github link to Actual Training file](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Sample-Notebooks/TransferLearnWith400kImages.ipynb)***  
+***[Github link to Debug Training file](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Sample-Notebooks/DebugTrainingWith10kImages.ipynb)***                                                                                                          
+
+ ***[ Github link to Actual Training file](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Sample-Notebooks/TransferLearnWith400kImages.ipynb)***  
 
 ## 
 
@@ -528,7 +530,9 @@ Estimated Total Size (MB): 95394.64
 
 ***While modularising with many return values and multiple outputs and skip connections as return alue. That increase the Foreward/Backward pass size too much(more than 1M MB). That makes the network not fix in the GPU memory. So that made me to include some blocks(Expecially Encoder block modules) inside the main MDEAS class.***
 
-[Here is the modular Code](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/model/MDEASModel_backup.py)  																				 [Here is the less modular code to fit inside GPU memory ](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/model/MDEASModel.py)
+[Here is the modular Code](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/model/MDEASModel_backup.py) 
+
+[Here is the less modular code to fit inside GPU memory ](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/model/MDEASModel.py)
 
 
 
@@ -855,5 +859,7 @@ Evaluating the depth estimation and mask generation quality b observation.
 
 
 
-***[Github link to Debug Training file](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Sample-Notebooks/DebugTrainingWith10kImages.ipynb)***                                                                                                           ***[ Github link to Actual Training file](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Sample-Notebooks/TransferLearnWith400kImages.ipynb)***  
+***[Github link to Debug Training file](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Sample-Notebooks/DebugTrainingWith10kImages.ipynb)***                                                                                                         
+
+ ***[ Github link to Actual Training file](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Sample-Notebooks/TransferLearnWith400kImages.ipynb)***  
 
