@@ -64,7 +64,14 @@ Both background and foreground-background image is of size 224\*224\*3, its RGB 
 
  ***[ Github link to Actual Training file](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Sample-Notebooks/TransferLearnWith400kImages.ipynb)***  
 
-## 
+
+
+## Contents
+
+* [Model Overview](#Model-Overview)
+* [Modules and Hyper Params](#Modules-and-Hyper Params)
+* [Training Strategy](#Training-Strategy)
+* [Evaluation](#Evaluation)
 
 ## Model Overview
 
@@ -76,11 +83,13 @@ Here is the MDEAS Model Architecture.
 
 ![Depth Decoder - Tensorboard](images/modelArch.png)
 
-Below I'm explaining how I came to this architectre designing.
+
 
 [Python implementation of complete model with individual modules are available here](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/model/MDEASModel_backup.py)
 
 
+
+Below I'm explaining about, how did I come up to this architectre designing.
 
 #### MDEAS Model should be *Encoder-Decoder network*
 
@@ -750,7 +759,7 @@ Overall Debug Training of 20 epochs took ***2 hours 7 minutes***
 
 [Github link to Actual Training file](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Sample-Notebooks/TransferLearnWith400kImages.ipynb)  [![Open main Notebook](https://colab.research.google.com/assets/colab-badge.svg)](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Sample-Notebooks/TransferLearnWith400kImages.ipynb)
 
-
+*All the output images and plots are available in Evaluation session*
 
 ## Evaluation
 
