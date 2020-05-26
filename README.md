@@ -622,7 +622,7 @@ Once the cyclicLR completes max cycles, then the LR reduces with a factor of 10 
 
 ### Criterion
 
-Choosing the best criterion and the K factor was one of the biggest challenge in this project.
+Choosing the best criterion and the coefficiant factor was one of the biggest challenge in this project.
 
 * **MSE Loss(Mean square error loss)**
 
@@ -669,11 +669,11 @@ Choosing the best criterion and the K factor was one of the biggest challenge in
 
 
 
-I decided to calculate compund loss by using multiple criterions. Diffrent K values should use for each criterion.
+I decided to calculate compund loss by using multiple criterions. Diffrent coefficient values should use for each criterion.
 
-SSIM Loss criterion can be use for depth loss calculation. This is applicable to mask also, but MSELoss is something better for mask. So I added SSIM Loss criterion with less K value to compund loss.
+SSIM Loss criterion can be use for depth loss calculation. This is applicable to mask also, but MSELoss is something better for mask. So I added SSIM Loss criterion with less coefficient value to compund loss.
 
-Depth criterion needs higher K value as compare to criterions for Mask. Because depth estimation is the complex task as compare to mask generation. 
+Depth criterion needs higher coefficient value as compare to criterions for Mask. Because depth estimation is the complex task as compare to mask generation. 
 
 ***Loss Calculation***
 
@@ -689,9 +689,9 @@ Accuracy of images got  calculated using SSIM and mean-IoU.
 
 While running each epoch, the accuracy is calculated by averaging over the images.
 
-Got some error in mean-IoU implementation. So accuracy calculations continued with SSIM.
-
 Both SSIM and mean-IoU values varies from 0 to 1. Multiplying this value with 100 gives accuracy in percentage.
+
+
 
 
 
@@ -703,21 +703,35 @@ I guess hue, saturation kind of pixels intensity changing augmentation I can try
 
 I would like to continue the test with some augmentations such as hue, saturations.
 
+[SSIM implementation](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/criterion/SSIM.py)
+
+[Mean IoU implementatation](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/criterion/mIoU.py)
+
 
 
 ### Logs
 
-* Created SummaryWriter class to handle all the logs that includes data to Tensorboard, checkpoints to save.
+* Created ***Summary Tracker*** class to handle all the logs that includes data to Tensorboard, checkpoints to save.
 
-  
+  While initialising the object with a path, it will create two directories there.
+
+  * *tensorboard* - This directory used to hold all the tensorboard data such as model net graph, sample images made while training and validation.
+  * *Checkpoints* - this directory holds the saved model weights. This directory concist of 3 checkpoint weights.
+    * *latest-modet.pth* - Holds the latest wight saved at checkpoints. Two checkpoints are there. One at end of eevery epoch(end of training and validation), Another one is in every 500 mini-batch of training.
+    * *best-depth-model.pth* - Holds the model weights which shows best depth validation accuracy while training.
+    * *best-mask-model.pth* - Holds the model weights which shows best mask validation accuracy while training.
 
 * ***Tensorboard*** is used to log the loss and accuracy values from the training. This avoides the additional RAM consumption for print/display information in notebook. And made the notebook lighter.
 
 * Initially I used ***tqdm*** to see the progress bar with some loss and accuracy description.
 
-  But while running the !timeit magic for line by line computational time calculation its observed that, tqdm progress bar consuming around 5600 microseconds while normat printf is only consumes only 5 microseconds. So I continued with print function in a way it make prints only 10 times in an epoch.
+  But while running the !timeit magic for line by line computational time calculation its observed that, tqdm progress bar consuming around 5600 microseconds while normat print is only consumes only 5 microseconds. So I continued with print function in a way it make prints only 10 times in an epoch.
 
-* I
+  ***[Here is the link to summar tracker class](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Logger/SummaryTracker.py)***
+
+  ***[Here is the link to my summary writer folder generated for the  debug training](https://drive.google.com/open?id=1-CxDk8_1ijlHIMOPf9cZlvYLChHZi20s)***
+
+  
 
 ## Training Strategy
 
