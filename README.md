@@ -252,29 +252,29 @@ class EncoderBlock(nn.Module):
 #### Rceptive Field in Encoder
 
 ```python
-#  input 			Kernel			  	Output		 Max Receptive Field
+#  input			Kernel			  	Output		 Max Receptive Field
 #Init Block#
 224x224x3			3x3x32				224x224x32				3 
 224x224x32		3x3x32,s=2		112x112x32				5
 
-112x112x32(2)   concat			112x112x64				5
+112x112x32(2)	concat			112x112x64				5
 
 #Encoder block-1
-112x112x64    3x3x64				112x112x64				9
+112x112x64		3x3x64				112x112x64				9
 112x112x64		3x3x64				112x112x64				13
 112x112x64		3x3x64				112x112x64				17
 112x112x64		1x1x128				112x112x128				17
 112x112x128		maxpool(2)		56x56x128					19
 
 #Encoder block-2
-56x56x128     3x3x128				56x56x128					27
+56x56x128			3x3x128				56x56x128					27
 56x56x128			3x3x128				56x56x128					35
 56x56x128			3x3x128				56x56x128					43
 56x56x128			1x1x256				56x56x256					43
 56x56x256			maxpool(2)		28x28x128					47
 
 #Encoder block-3
-28x28x256    	28x28x256				28x28x256				63
+28x28x256			28x28x256				28x28x256				63
 28x28x256			28x28x256				28x28x256				79
 28x28x256			28x28x256				28x28x256				95
 28x28x256			1x1x256					28x28x256				95
@@ -621,7 +621,7 @@ Estimated Total Size (MB): 95394.64
 ----------------------------------------------------------------
 ```
 
-***While modularising with many return values and multiple outputs and skip connections as return alue. That increase the Foreward/Backward pass size too much(more than 1M MB). That makes the network not fix in the GPU memory. So that made me to include some blocks(Expecially Encoder block modules) inside the main MDEAS class.***
+***While modularising with many return values and multiple outputs and skip connections as return value. That increase the Foreward/Backward pass size too much(more than 1M MB). That makes the network not fix in the GPU memory. So, that made me to include some blocks(Expecially Encoder and Init block modules) inside the main MDEAS class without much modularisation.***
 
 [Here is the modular Code](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/model/MDEASModel_backup.py) 
 
