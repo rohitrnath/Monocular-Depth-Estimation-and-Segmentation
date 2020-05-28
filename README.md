@@ -2,9 +2,11 @@
 
 ## Project Description
 
-In this image estimation project we are creating a CNN-Network that can do monocular depth estimation and foreground-background seperation simulataneously.
+In this image estimation project we are creating a CNN-Network that can do monocular depth estimation and foreground-background separation simultaneously.
 
 ***Use Case : For autonomous bots like 'rumba' we can use this model for real-time tracking of changes in the environment by using foreground-background seperation, and could able to find the distance with depth estimation.***
+
+
 
 The MDEAS network should take two images as input.
 
@@ -79,6 +81,7 @@ Both background and foreground-background image is of size 224\*224\*3, its RGB 
 * [Training Strategy](#Training-Strategy)
 * [**Training with Transfer Learning ](#Training-with-Transfer-Learning )
 * [Evaluation](#Evaluation)
+* [Demo Video](#Demo-Video)
 
 ## Model Overview
 
@@ -252,19 +255,19 @@ class EncoderBlock(nn.Module):
 #### Rceptive Field in Encoder
 
 ```python
-#  input			Kernel			  	Output		 Max Receptive Field
+#  input			Kernel			  Output		 Max Receptive Field
 #Init Block#
 224x224x3			3x3x32				224x224x32				3 
-224x224x32		3x3x32,s=2		112x112x32				5
+224x224x32			3x3x32,s=2	112x112x32				5
 
-112x112x32(2)	concat			112x112x64				5
+112x112x32(2)			concat		112x112x64				5
 
 #Encoder block-1
-112x112x64		3x3x64				112x112x64				9
-112x112x64		3x3x64				112x112x64				13
-112x112x64		3x3x64				112x112x64				17
-112x112x64		1x1x128				112x112x128				17
-112x112x128		maxpool(2)		56x56x128					19
+112x112x64			3x3x64			112x112x64				9
+112x112x64			3x3x64			112x112x64				13
+112x112x64			3x3x64			112x112x64				17
+112x112x64			1x1x128			112x112x128				17
+112x112x128			maxpool(2)	56x56x128					19
 
 #Encoder block-2
 56x56x128			3x3x128				56x56x128					27
@@ -274,11 +277,11 @@ class EncoderBlock(nn.Module):
 56x56x256			maxpool(2)		28x28x128					47
 
 #Encoder block-3
-28x28x256			28x28x256				28x28x256				63
-28x28x256			28x28x256				28x28x256				79
-28x28x256			28x28x256				28x28x256				95
-28x28x256			1x1x256					28x28x256				95
-28x28x256			maxpool(2)  		14x14x256				103
+28x28x256			28x28x256			28x28x256					63
+28x28x256			28x28x256			28x28x256					79
+28x28x256			28x28x256			28x28x256					95
+28x28x256			1x1x256				28x28x256					95
+28x28x256			maxpool(2)  	4x14x256					103
 
 The encoder output image of size 14x14x256 with maximum receptive field of 103[jump in to bottleneck = 16]
 ```
@@ -344,6 +347,18 @@ Mask decoder block consist of 6 modules. In that first 4 modules upsample the im
   <img src="images/shuffleConv.png" alt="pixel shuffle" style="zoom:50%;" />
 
   First I chose transpose convolution(De-Conv) at this position. But in the output image I observe huge checker-board issues. Thats why I choose pixel shuffling at this stage. Pixel shuffling algorithm is famous to avoid checker-board issues.
+
+  
+
+* ***Next is Pointwise Convolution layer***
+
+  This is to convert 224x224x16 image to 224x224x1 dense output. By fine tuning of weight by doing continuous feed forward and back propagate, the dense out can become the depth estimation grayscale image.
+
+  
+
+* ***Last layer is Sigmoid***
+
+  Mask image needs only black and white images. So we are using sigmoid at last layer of mask decoder block to make all the values near to 1 or 0. That helps to avoid the gradiant variation from black to white.
 
   
 
@@ -1078,7 +1093,14 @@ Evaluating the depth estimation and mask generation quality b observation.
 
 
 
-***[Github link to Debug Training file](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Sample-Notebooks/DebugTrainingWith10kImages.ipynb)***                                                                                                         
+***[Github link to Debug Training Notebook](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Sample-Notebooks/DebugTrainingWith10kImages.ipynb)***                                                                                                         
 
-***[ Github link to Actual Training file](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Sample-Notebooks/TransferLearnWith400kImages.ipynb)***  
+***[ Github link to Actual Training Notebook](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Sample-Notebooks/TransferLearnWith400kImages.ipynb)***  
 
+
+
+## Demo Video
+
+[![demo video](images/demovideo.png)](https://youtu.be/s5zNtx1zetk)
+
+[Github link to Notebook used to create video](https://github.com/rohitrnath/Monocular-Depth-Estimation-and-Segmentation/blob/master/Sample-Notebooks/TestModelWithDanceVideo.ipynb)
