@@ -6,6 +6,7 @@ In this image estimation project we are creating a CNN-Network that can do monoc
 
 ***Use Case : For autonomous bots like 'rumba' we can use this model for real-time tracking of changes in the environment by using foreground-background seperation, and could able to find the distance with depth estimation.***
 
+[![demo video](images/demovideo.png)](https://youtu.be/s5zNtx1zetk)
 
 
 The MDEAS network should take two images as input.
